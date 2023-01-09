@@ -1,0 +1,163 @@
+﻿@page "/item"
+@inject HttpClient Http
+@inject NavigationManager NavManager
+@inject ISnackbar Snackbar
+@using System.Security.Claims
+@using InvoicePWABlazor.Dtos
+@using InvoicePWABlazor.Models
+
+<h2 class="border-bottom m-2 border-dark">
+    Produkty
+    <small class="text-muted">wszystkie produkty w systemie</small>
+</h2>
+<MudPaper Class="d-flex bg-light mb-3">
+    <MudBreadcrumbs Items="_items"></MudBreadcrumbs>
+    <MudSpacer />
+    <MudIconButton Icon="@Icons.Filled.AddBox" Color="Color.Dark" OnClick="AddItem"></MudIconButton>
+</MudPaper>
+
+<MudTable Items="@Elements" Dense="true" Hover="true" ReadOnly="false" CanCancelEdit="true" Filter="new Func<Item,bool>(FilterFunc)"
+          @bind-SelectedItem="selectedItem1" SortLabel="Sort By" CommitEditTooltip="Commit Edit"
+          RowEditPreview="BackupItem" RowEditCancel="ResetItemToOriginalValues"
+          RowEditCommit="ItemHasBeenCommitted" IsEditRowSwitchingBlocked="@true" ApplyButtonPosition="@applyButtonPosition" EditButtonPosition="@editButtonPosition" EditTrigger="@editTrigger">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Produkty</MudText>
+        <MudSpacer />
+        <MudTextField @bind-Value="searchString" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+
+    <HeaderContent>
+        <MudTh><MudTableSortLabel InitialDirection="SortDirection.Ascending" SortBy="new Func<Item, object>(x=>x.Name)">Name</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Item, object>(x=>x.Quantity)">Quantity</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Item, object>(x=>x.Unit)">Unit</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Item, object>(x=>x.Price)">Price</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Item, object>(x=>x.NettoPrice)">NettoPrice</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Item, object>(x=>x.Vat)">Vat</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Item, object>(x=>x.BruttoPrice)">BruttoPrice</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Item, object>(x=>x.Desc)">Desc</MudTableSortLabel></MudTh>
+
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Name">@context.Name</MudTd>
+        <MudTd DataLabel="Unit">@context.Quantity</MudTd>
+        <MudTd DataLabel="Unit">@context.Unit</MudTd>
+        <MudTd DataLabel="Price">@context.Price</MudTd>
+        <MudTd DataLabel="NettoPrice">@context.NettoPrice</MudTd>
+        <MudTd DataLabel="NettoPrice">@context.Vat</MudTd>
+        <MudTd DataLabel="NettoPrice">@context.BruttoPrice</MudTd>
+        <MudTd DataLabel="NettoPrice">@context.Desc</MudTd>
+
+    </RowTemplate>
+    <RowEditingTemplate>
+        @*<MudTd DataLabel="Nr">@context.Id</MudTd>*@
+        <MudTd DataLabel="Name">
+            @context.Name
+        </MudTd>
+        <MudTd DataLabel="Quantity">
+            <MudTextField @bind-Value="@context.Quantity" />
+        </MudTd>
+        <MudTd DataLabel="Unit">
+            @context.Unit
+        </MudTd>
+        <MudTd DataLabel="Quantity">
+            @context.Price
+        </MudTd>
+        <MudTd DataLabel="Quantity">
+            @context.NettoPrice
+        </MudTd>
+        <MudTd DataLabel="Quantity">
+            @context.Vat
+        </MudTd>
+        <MudTd DataLabel="Quantity">
+            @context.BruttoPrice
+        </MudTd>
+        <MudTd DataLabel="Quantity">
+            @context.Desc
+        </MudTd>
+    </RowEditingTemplate>
+    <PagerContent>
+        <MudTablePager Class="" />
+    </PagerContent>
+    <EditButtonContent Context="button">
+        <MudIconButton Size="@Size.Small" Icon="@Icons.Outlined.Edit" Class="pa-0" OnClick="@button.ButtonAction" Disabled="@button.ButtonDisabled" />
+    </EditButtonContent>
+</MudTable>
+
+@code {
+    private List<BreadcrumbItem> _items = new List<BreadcrumbItem>
+    {
+     new BreadcrumbItem("Home", href: "/", icon: Icons.Material.Filled.Home),
+        new BreadcrumbItem("Produkty",  href: null, disabled: true)
+    };
+    private List<string> editEvents = new();
+
+    private string searchString = "";
+    private Item selectedItem1 = null;
+    private Item elementBeforeEdit;
+    private HashSet<Item> selectedItems1 = new HashSet<Item>();
+    private TableApplyButtonPosition applyButtonPosition = TableApplyButtonPosition.End;
+    private TableEditButtonPosition editButtonPosition = TableEditButtonPosition.End;
+    private TableEditTrigger editTrigger = TableEditTrigger.EditButton;
+    private IEnumerable<Item> Elements = new List<Item>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Elements = await Http.GetFromJsonAsync<List<Item>>($"https://localhost:7116/api/Item");
+    }
+
+    private void AddEditionEvent(string message)
+    {
+        editEvents.Add(message);
+        StateHasChanged();
+    }
+
+    private void BackupItem(object element)
+    {
+        elementBeforeEdit = new()
+            {
+                Name = ((Item)element).Name,
+                Quantity = ((Item)element).Quantity,
+                Unit = ((Item)element).Unit,
+                Price = ((Item)element).Price,
+                Vat = ((Item)element).Vat,
+                NettoPrice = ((Item)element).NettoPrice,
+                BruttoPrice = ((Item)element).BruttoPrice,
+                Desc = ((Item)element).Desc,
+
+            };
+    }
+
+    private async void ItemHasBeenCommitted(object element)
+    {
+        Console.WriteLine("ItemHasBeenCommitted");
+        await Http.PutAsJsonAsync("https://localhost:7116/api/Item", (Item)element);
+        Elements = await Http.GetFromJsonAsync<List<Item>>($"https://localhost:7116/api/Item");
+    }
+
+    private void ResetItemToOriginalValues(object element)
+    {
+        ((Item)element).Name = elementBeforeEdit.Name;
+        ((Item)element).Quantity = elementBeforeEdit.Quantity;
+        ((Item)element).Unit = elementBeforeEdit.Unit;
+        ((Item)element).Price = elementBeforeEdit.Price;
+        ((Item)element).Vat = elementBeforeEdit.Vat;
+        ((Item)element).NettoPrice = elementBeforeEdit.NettoPrice;
+        ((Item)element).BruttoPrice = elementBeforeEdit.BruttoPrice;
+        ((Item)element).Desc = elementBeforeEdit.Desc;
+
+    }
+
+    private bool FilterFunc(Item element)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+        if (element.Name.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        return false;
+    }
+    private async Task AddItem()
+    {
+        NavManager.NavigateTo($"/item/add");
+    }
+}
+

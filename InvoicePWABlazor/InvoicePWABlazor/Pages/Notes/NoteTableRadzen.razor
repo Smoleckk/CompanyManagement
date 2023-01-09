@@ -1,0 +1,132 @@
+﻿@page "/note"
+@inject HttpClient Http
+@using System.Security.Claims
+@using InvoicePWABlazor.Dtos
+@using InvoicePWABlazor.Models
+@using Radzen
+@using Radzen.Blazor
+
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavManager
+
+@attribute [Authorize]
+<h2 class="border-bottom m-2 border-dark">
+    Notatki
+    <small class="text-muted">twoje notatki</small>
+</h2>
+<MudPaper Class="d-flex bg-light">
+    <MudBreadcrumbs Items="_items"></MudBreadcrumbs>
+    <MudSpacer />
+</MudPaper>
+
+<div class="row">
+    <div class="col-md-3 p-3">
+        <RadzenCard>
+            <MudButton StartIcon="@Icons.Filled.AddBox" Color="Color.Dark" Size="Size.Small" OnClick="Clear">Nowa notatka</MudButton>
+            <RadzenListBox AllowFiltering="true" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" @bind-Value=@value Data=@Elements TextProperty="Title" ValueProperty="Id"
+                           Change=@(args => OnChange(args, "ListBox with filtering")) Style="height:80%;max-height: 600px;" Class="w-100" />
+        </RadzenCard>
+    </div>
+    <div class="col-md-9 p-3">
+        <MudPaper Class="mb-3 p-3">
+            <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Podaj tytul notatki</RadzenText>
+            <RadzenTextBox @bind-Value=@Title Class="w-100 mb-3" />
+            <RadzenHtmlEditor @bind-Value=@Body style="height: 500px; margin-bottom: 1rem;" UploadUrl="upload/image" />
+            @if (Postid != -1)
+            {
+                <MudButton StartIcon="@Icons.Filled.Edit" Color="Color.Error" Size="Size.Small" OnClick="DeleteNote" Class="m-4">Usun</MudButton>
+                <MudButton StartIcon="@Icons.Material.Filled.Save" Color="Color.Info" Size="Size.Small" OnClick="UpdateNote">Edytuj</MudButton>
+            }
+            else
+            {
+                <MudButton StartIcon="@Icons.Material.Filled.Save" Color="Color.Info" Size="Size.Small" OnClick="AddNote">Zapisz</MudButton>
+            }
+        </MudPaper>
+    </div>
+</div>
+
+@code {
+    private List<BreadcrumbItem> _items = new List<BreadcrumbItem>
+    {
+     new BreadcrumbItem("Home", href: "/", icon: Icons.Material.Filled.Home),
+        new BreadcrumbItem("Notatki", href: null, disabled: true)
+    };
+
+    private IEnumerable<Note> Elements = new List<Note>();
+    NoteDto n = new NoteDto();
+    Note updateNote = new Note();
+    private string surnameMessage;
+
+    int Postid = -1;
+    string Title = "";
+    string Body = "";
+
+    int value = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Postid = -1;
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        surnameMessage = user.Identity.Name;
+        Elements = await Http.GetFromJsonAsync<List<Note>>($"https://localhost:7116/api/Note/{surnameMessage}");
+
+
+    }
+    void OnChange(object value2, string name)
+    {
+        Note n = Elements.FirstOrDefault(n => n.Id == value);
+        Postid = n.Id;
+        Title = n.Title;
+        Body = n.Body;
+    }
+    private async Task Clear()
+    {
+        Postid = -1;
+        Title = "";
+        Body = "";
+    }
+
+    private async Task AddNote()
+    {
+        n.Title = Title;
+        n.Body = Body;
+        n.CreateDate = DateTime.Now;
+        await Http.PostAsJsonAsync("https://localhost:7116/api/Note/" + surnameMessage, n);
+        Elements = await Http.GetFromJsonAsync<List<Note>>($"https://localhost:7116/api/Note/{surnameMessage}");
+
+        Postid = -1;
+        Title = "";
+        Body = "";
+
+    }
+
+    private async Task DeleteNote()
+    {
+        await Http.DeleteAsync($"https://localhost:7116/api/Note/" + Postid);
+        Elements = await Http.GetFromJsonAsync<List<Note>>($"https://localhost:7116/api/Note/{surnameMessage}");
+
+        Postid = -1;
+        Title = "";
+        Body = "";
+    }
+    private async Task UpdateNote()
+    {
+        updateNote.Id = Postid;
+        updateNote.Title = Title;
+        updateNote.Body = Body;
+        updateNote.CreateDate = DateTime.Now;
+        await Http.PutAsJsonAsync("https://localhost:7116/api/Note/", updateNote);
+
+        Elements = await Http.GetFromJsonAsync<List<Note>>($"https://localhost:7116/api/Note/{surnameMessage}");
+
+        Postid = -1;
+        Title = "";
+        Body = "";
+    }
+
+
+
+}

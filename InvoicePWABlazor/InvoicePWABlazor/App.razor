@@ -1,0 +1,27 @@
+﻿<CascadingAuthenticationState>
+    <Router AppAssembly="@typeof(App).Assembly">
+        <Found Context="routeData">
+            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+                <NotAuthorized>
+                    <div class="sufee-login d-flex align-content-center flex-wrap ">
+                        <div class="container ">
+                            <h1 style="color:#fff">Sorry, but you're not allowed to see this. :('</h1>
+                        </div>
+                    </div>
+                </NotAuthorized>
+            </AuthorizeRouteView>
+            <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+        </Found>
+        <NotFound>
+            <PageTitle>Not found</PageTitle>
+            <LayoutView Layout="@typeof(MainLayout)">
+                <div class="sufee-login d-flex align-content-center flex-wrap ">
+                    <div class="container ">
+                        <h1>Sorry, there's nothing at this address.</h1>
+                    </div>
+                </div>
+                @*<p role="alert">Sorry, there's nothing at this address.</p>*@
+            </LayoutView>
+        </NotFound>
+    </Router>
+</CascadingAuthenticationState>

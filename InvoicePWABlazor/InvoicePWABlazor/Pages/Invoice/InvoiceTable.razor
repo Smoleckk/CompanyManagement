@@ -1,0 +1,221 @@
+﻿@page "/table"
+@using InvoicePWABlazor.Shared.Common
+@inject HttpClient Http
+@inject NavigationManager NavManager
+@attribute [Authorize]
+
+<h2 class="border-bottom m-2 border-dark">
+    Faktura sprzedażowa
+    <small class="text-muted">wszystkie wystawione faktury w systemie</small>
+</h2>
+<MudPaper Class="d-flex bg-light">
+    <MudBreadcrumbs Items="_items"></MudBreadcrumbs>
+    <MudSpacer />
+    <MudIconButton Icon="@Icons.Filled.AddBox" Color="Color.Dark" OnClick="AddInvocie"></MudIconButton>
+</MudPaper>
+
+<MudContainer Class="d-flex m-2 flex-wrap align-items-center justify-content-around ">
+    <SummaryCard paidInvoices="@paidInvoices" FiltrInvoices="@(()=>OnSearch("Oplacaona"))"></SummaryCard>
+    <SummaryCard paidInvoices="@unpaidInvoices" FiltrInvoices="@(()=>OnSearch("Nieoplacona"))"></SummaryCard>
+    <SummaryCard paidInvoices="@otherInvoices" FiltrInvoices="@(()=>OnSearch(""))"></SummaryCard>
+</MudContainer>
+
+<MudTable Dense="true" ServerData="@(new Func<TableState, Task<TableData<Invoice>>>(ServerReload))"
+          Hover="true" @ref="table">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Faktury</MudText>
+        <MudSpacer />
+        <MudTextField T="string" ValueChanged="@(s=>OnSearch(s))" Placeholder="Search" Adornment="Adornment.Start"
+                      AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh><MudTableSortLabel SortLabel="invoiceNumber" T="Invoice">Numer Faktury</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="finalNettoPrice" T="Invoice">Wartosc netto</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="finalPrice" T="Invoice">Wartosc brutto</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="buyer" T="Invoice">Nabywca</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="dateOfIssue" T="Invoice">Data wystawienia</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="dateOfPay" T="Invoice">Data platnosci</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="payStatus" T="Invoice">Status platnosci</MudTableSortLabel></MudTh>
+
+        @*<MudTh><MudTableSortLabel T="Invoice">Akcje</MudTableSortLabel></MudTh>*@
+    </HeaderContent>
+    <RowTemplate>
+        @if (context.payStatus == "Oplacaona")
+        {
+
+            <MudTd Class="text-success" DataLabel="Numer Faktury"><a class="text-info" style="cursor:pointer" href="/invoice-page/@context.id">@context.invoiceNumber</a></MudTd>
+            <MudTd Class="text-success" DataLabel="Wartosc netto">@context.finalNettoPrice</MudTd>
+            <MudTd Class="text-success" DataLabel="Wartosc brutto">@context.finalPrice</MudTd>
+            <MudTd Class="text-success" DataLabel="Nabywca">@context.buyer</MudTd>
+            <MudTd Class="text-success" DataLabel="Data wystawienia">@context.dateOfIssue.ToString("dd'/'MM'/'yyyy")</MudTd>
+            <MudTd Class="text-success" DataLabel="Data platnosci">@context.dateOfPay.ToString("dd'/'MM'/'yyyy")</MudTd>
+            <MudTd Class="text-success" DataLabel="Status platnosci">@context.payStatus</MudTd>
+            @*            <MudTd DataLabel="Akcje" Style="">
+        <a class="" href="/invoice-data/@context.id"><i style="cursor:pointer" class="fa fa-edit"></i></a>
+        <a class="" href="/invoice-page/@context.id"><i style="cursor:pointer" class="fa fa-print"></i></a>
+
+        </MudTd>*@
+        }
+
+        else if (DateTime.Compare(context.dateOfPay, DateTime.Now) < 0 && context.payStatus == "Nieoplacona")
+        {
+            <MudTd Class="text-success" DataLabel="Numer Faktury"><a class="text-info" style="cursor:pointer" href="/invoice-page/@context.id">@context.invoiceNumber</a></MudTd>
+            <MudTd Class="text-danger" DataLabel="Wartosc netto">@context.finalNettoPrice</MudTd>
+            <MudTd Class="text-danger" DataLabel="Wartosc brutto">@context.finalPrice</MudTd>
+            <MudTd Class="text-danger" DataLabel="Nabywca">@context.buyer</MudTd>
+            <MudTd Class="text-danger" DataLabel="Data wystawienia">@context.dateOfIssue.ToString("dd'/'MM'/'yyyy")</MudTd>
+            <MudTd Class=" text-danger" DataLabel="Data platnosci">@context.dateOfPay.ToString("dd'/'MM'/'yyyy")</MudTd>
+            <MudTd Class="bg-warning text-danger" DataLabel="Status platnosci">@context.payStatus</MudTd>
+            @*            <MudTd DataLabel="Akcje" Style="">
+        <a class="" href="/invoice-data/@context.id"><i style="cursor:pointer" class="fa fa-edit"></i></a>
+        <a class="" href="/invoice-page/@context.id"><i style="cursor:pointer" class="fa fa-print"></i></a>
+        </MudTd>*@
+        }
+        else if (context.payStatus == "Nieoplacona")
+        {
+            <MudTd Class="text-success" DataLabel="Numer Faktury"><a class="text-info" style="cursor:pointer" href="/invoice-page/@context.id">@context.invoiceNumber</a></MudTd>
+            <MudTd Class="text-danger" DataLabel="Wartosc netto">@context.finalNettoPrice</MudTd>
+            <MudTd Class="text-danger" DataLabel="Wartosc brutto">@context.finalPrice</MudTd>
+            <MudTd Class="text-danger" DataLabel="Nabywca">@context.buyer</MudTd>
+            <MudTd Class="text-danger" DataLabel="Data wystawienia">@context.dateOfIssue.ToString("dd'/'MM'/'yyyy")</MudTd>
+            <MudTd Class="text-danger" DataLabel="Data platnosci">@context.dateOfPay.ToString("dd'/'MM'/'yyyy")</MudTd>
+            <MudTd Class="text-danger" DataLabel="Status platnosci">@context.payStatus</MudTd>
+            @*            <MudTd DataLabel="Akcje" Style="">
+        <a class="" href="/invoice-data/@context.id"><i style="cursor:pointer" class="fa fa-edit"></i></a>
+        <a class="" href="/invoice-page/@context.id"><i style="cursor:pointer" class="fa fa-print"></i></a>
+        </MudTd>*@
+        }
+        else
+        {
+            <MudTd Class="text-success" DataLabel="Numer Faktury"><a class="text-info" style="cursor:pointer" href="/invoice-page/@context.id">@context.invoiceNumber</a></MudTd>
+            <MudTd DataLabel="Wartosc netto">@context.finalNettoPrice</MudTd>
+            <MudTd DataLabel="Wartosc brutto">@context.finalPrice</MudTd>
+            <MudTd DataLabel="Nabywca">@context.buyer.Split(Environment.NewLine.ToCharArray());</MudTd>
+            <MudTd DataLabel="Data wystawienia">@context.dateOfIssue.ToString("dd'/'MM'/'yyyy")</MudTd>
+            <MudTd DataLabel="Data platnosci">@context.dateOfPay.ToString("dd'/'MM'/'yyyy")</MudTd>
+            <MudTd DataLabel="Status platnosci">@context.payStatus</MudTd>
+            @*            <MudTd DataLabel="Akcje" Style="">
+        <a class="" href="/invoice-data/@context.id"><i style="cursor:pointer" class="fa fa-edit"></i></a>
+        <a class="" href="/invoice-page/@context.id"><i style="cursor:pointer" class="fa fa-print"></i></a>
+        </MudTd>*@
+        }
+
+    </RowTemplate>
+    <NoRecordsContent>
+        <MudText>No matching records found</MudText>
+    </NoRecordsContent>
+    <LoadingContent>
+        <MudText>Loading...</MudText>
+    </LoadingContent>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+@code {
+    private List<BreadcrumbItem> _items = new List<BreadcrumbItem>
+    {
+     new BreadcrumbItem("Home", href: "/", icon: Icons.Material.Filled.Home),
+        new BreadcrumbItem("Faktury",  href: null, disabled: true)
+    };
+    private IEnumerable<Invoice> pagedData;
+    private MudTable<Invoice> table;
+
+    private int totalItems;
+    private string searchString = null;
+    private IEnumerable<Invoice>? data;
+    private IEnumerable<Invoice>? calculateData;
+    private int paidInvoices = 0;
+    private int unpaidInvoices = 0;
+    private int otherInvoices = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        calculateData = await Http.GetFromJsonAsync<List<Invoice>>("https://localhost:7116/api/Invoice");
+        foreach (var i in calculateData)
+        {
+            if (i.payStatus == "Nieoplacona")
+            {
+                unpaidInvoices++;
+            }
+            else if (i.payStatus == "Oplacaona")
+            {
+                paidInvoices++;
+            }
+            else
+            {
+                otherInvoices++;
+            }
+        }
+    }
+    private async Task<TableData<Invoice>> ServerReload(TableState state)
+    {
+        data = await Http.GetFromJsonAsync<List<Invoice>>("https://localhost:7116/api/Invoice");
+        data = data.Reverse();
+        await Task.Delay(300);
+        data = data.Where(element =>
+        {
+            if (string.IsNullOrWhiteSpace(searchString))
+                return true;
+            if (element.invoiceNumber.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+                return true;
+            if (element.buyer.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+                return true;
+            if (element.payStatus.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+                return true;
+            if ($"{element.invoiceNumber} {element.buyer} {element.finalPrice}".Contains(searchString))
+                return true;
+            return false;
+        }).ToArray();
+        totalItems = data.Count();
+        switch (state.SortLabel)
+        {
+            case "invoiceNumber":
+                data = data.OrderByDirection(state.SortDirection, o => o.invoiceNumber);
+                break;
+            case "finalNettoPrice":
+                data = data.OrderByDirection(state.SortDirection, o => o.finalNettoPrice);
+                break;
+            case "finalPrice":
+                data = data.OrderByDirection(state.SortDirection, o => o.finalPrice);
+                break;
+            case "buyer":
+                data = data.OrderByDirection(state.SortDirection, o => o.buyer);
+                break;
+            case "dateOfIssue":
+                data = data.OrderByDirection(state.SortDirection, o => o.dateOfIssue);
+                break;
+            case "dateOfPay":
+                data = data.OrderByDirection(state.SortDirection, o => o.dateOfPay);
+                break;
+            case "payStatus":
+                data = data.OrderByDirection(state.SortDirection, o => o.payStatus);
+                break;
+        }
+
+        pagedData = data.Skip(state.Page * state.PageSize).Take(state.PageSize).ToArray();
+        return new TableData<Invoice>() { TotalItems = totalItems, Items = pagedData };
+    }
+
+    private void OnSearch(string text)
+    {
+        searchString = text;
+        table.ReloadServerData();
+    }
+
+    private async Task DeleteInvoice(int id)
+    {
+
+        await Http.DeleteAsync($"https://localhost:7116/api/Invoice/{id}");
+        data = await Http.GetFromJsonAsync<List<Invoice>>("https://localhost:7116/api/Invoice");
+
+        //users = await Http.GetFromJsonAsync<User[]>("https://localhost:7293/users");
+    }
+    private async Task AddInvocie()
+    {
+        NavManager.NavigateTo($"/invoice-data");
+    }
+}
+
+
+

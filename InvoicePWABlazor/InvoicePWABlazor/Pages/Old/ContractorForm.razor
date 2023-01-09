@@ -1,0 +1,98 @@
+﻿@*@page "/contractor/{id}"
+@page "/contractor/add"*@
+@inject HttpClient Http
+@inject NavigationManager NavManager
+@attribute [Authorize]
+@if (b != null)
+{
+    <MudPaper Class="p-md-5 pt-3 pb-3" Width="100%" Height="450px">
+        <MudContainer>
+            <form @onsubmit="Action" class="mt-5">
+                <h3 class="pb-4">Dodaj kontrahenta</h3>
+                <div class="form-row">
+                    <div class="col-md-8 mb-3">
+                        <label>Nazwa firmy</label>
+                        <input type="text" class="form-control" @bind="b.Name" placeholder="Nazwa" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label>Numer NIP</label>
+                        <input type="text" class="form-control" @bind="b.NIP" placeholder="NIP" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label>Adres</label>
+                        <input type="text" class="form-control" @bind="b.Adres" placeholder="Adres" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label>Kod pocztowy</label>
+                        <input type="text" class="form-control" @bind="b.PostCode" placeholder="Kod pocztowy" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label>Kraj</label>
+                        <input type="text" class="form-control" @bind="b.Country" placeholder="Kraj" required>
+                    </div>
+                    @*        <div class="col-md-6 mb-3">
+                <label>Telefon</label>
+                <input type="text" class="form-control" @bind="b.Country" placeholder="Telefon" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                <label>Email</label>
+                <input type="email" class="form-control" @bind="b.Country" placeholder="Email" required>
+                </div>*@
+                </div>
+                <button type="submit"><MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save" Color="Color.Info" Size="Size.Small">Zapisz</MudButton></button>
+            </form>
+        </MudContainer>
+    </MudPaper>
+}
+
+@code {
+    [Parameter]
+    public string id { get; set; }
+
+    private Buyer b;
+    private BuyerDto bDto = new BuyerDto();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (id != null)
+        {
+            b = await Http.GetFromJsonAsync<Buyer>($"https://localhost:7116/api/Buyer/{id}");
+        }
+    }
+
+    private async Task AddBuyer()
+    {
+        bDto.Name = b.Name;
+        bDto.Adres = b.Adres;
+        bDto.PostCode = b.PostCode;
+        bDto.NIP = b.NIP;
+        bDto.Country = b.Country;
+        bDto.Invoices = new List<Invoice>();
+        await Http.PostAsJsonAsync("https://localhost:7116/api/Buyer", bDto);
+        NavManager.NavigateTo($"/contractor");
+    }
+
+    private async Task Action()
+    {
+        if (id == null)
+        {
+            bDto.Name = b.Name;
+            bDto.Adres = b.Adres;
+            bDto.PostCode = b.PostCode;
+            bDto.NIP = b.NIP;
+            bDto.Country = b.Country;
+            bDto.Invoices = new List<Invoice>();
+            await Http.PostAsJsonAsync("https://localhost:7116/api/Buyer", bDto);
+            NavManager.NavigateTo($"/contractor");
+        }
+        else
+        {
+            b.Invoices = new List<Invoice>();
+            await Http.PutAsJsonAsync("https://localhost:7116/api/Buyer", b);
+            NavManager.NavigateTo($"/contractor/info/{id}");
+        }
+
+    }
+
+}

@@ -1,0 +1,160 @@
+﻿@*@page "/note"*@
+@inject HttpClient Http
+@using System.Security.Claims
+@using InvoicePWABlazor.Dtos
+@using InvoicePWABlazor.Models
+
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavManager
+
+@attribute [Authorize]
+
+        @*<a class="d-flex column-form align-items-start justify-content-start align-items-center" style="cursor:pointer" @onclick="Clear"><h1>Dodaj nowa notatke</h1></a>*@
+<style type="text/css">
+    .mud-table-head .header-centered th {
+        text-align: center;
+        font-size: 1.2em;
+    }
+
+    .mud-table-foot .bold-text .mud-table-cell {
+        font-weight: 500;
+    }
+</style>
+<MudButton Variant="Variant.Filled" StartIcon="@Icons.Filled.AddBox" Color="Color.Dark" Size="Size.Small" OnClick="AddNote" Class="m-4">Dodaj nowa notatke</MudButton>
+
+<MudTable Dense="true" Items="@Elements.Take(10)" MultiSelection="true" @bind-SelectedItems="selectedItems" Hover="true" Breakpoint="Breakpoint.Sm" Striped="true" Bordered="true"
+          CustomHeader="true" CustomFooter="true" HeaderClass="table-head-bordered" FooterClass="table-foot-bordered">
+    <HeaderContent>
+        <MudTHeadRow IgnoreCheckbox="true" Class="header-centered">
+            <MudTh colspan="6">Notatki</MudTh>
+        </MudTHeadRow>
+        <MudTHeadRow IsCheckable="true">
+            <MudTh>Title</MudTh>
+            <MudTh>Body</MudTh>
+            <MudTh>Action</MudTh>
+        </MudTHeadRow>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Title">@context.Title</MudTd>
+        <MudTd DataLabel="Body">@((MarkupString)context.Body)</MudTd>
+            <MudTd>
+                <a class="d-flex column-form align-items-center justify-content-around align-items-center" @onclick="()=>EditNote(context)"><i style="cursor:pointer" class="fa fa-edit"></i></a>
+
+            </MudTd>
+
+        </RowTemplate>
+        <FooterContent>
+            <MudTFootRow IsCheckable="true">
+                <MudTd colspan="5">Selected: @selectedItems.Count</MudTd>
+            </MudTFootRow>
+        </FooterContent>
+    </MudTable>
+
+    @*<MudGrid Spacing="10" Justify="Justify.Center">
+    @foreach (var n in notes)
+    {
+        <MudItem xs=6 sm=3>
+            <MudCard Class="bg-warning h-100" style="max-width: 200px; max-height: 200px;">
+                <MudCardContent Class="h-75">
+                    <MudText>@n.Title</MudText>
+                    <MudText Typo="Typo.body2">@((MarkupString)n.Body.Substring(0, 100))</MudText>
+                    </MudCardContent>
+                    <MudCardActions>
+                        <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="()=>EditNote(n)">Edit</MudButton>
+                    </MudCardActions>
+                </MudCard>
+            </MudItem>
+
+    }
+
+
+</MudGrid>*@
+
+    @code {
+
+    private bool _hidePosition;
+    private IEnumerable<Note> Elements = new List<Note>();
+    private HashSet<Note> selectedItems = new HashSet<Note>();
+
+
+    int Postid = -1;
+    string Title = "";
+    string Body = "";
+
+
+    List<Note> notes = new List<Note>();
+    NoteDto n = new NoteDto();
+    Note updateNote = new Note();
+    private string surnameMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Postid = -1;
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity.IsAuthenticated)
+        {
+            surnameMessage = user.Identity.Name;
+            Elements = await Http.GetFromJsonAsync<List<Note>>($"https://localhost:7116/api/Note/{surnameMessage}");
+
+            notes = await Http.GetFromJsonAsync<List<Note>>($"https://localhost:7116/api/Note/{surnameMessage}");
+        }
+        else
+        {
+            surnameMessage = "The user is NOT authenticated.";
+        }
+    }
+    private async Task Clear()
+    {
+        Postid = -1;
+        Title = "";
+        Body = "";
+
+    }
+
+    private async Task EditNote(Note n)
+    {
+        NavManager.NavigateTo($"/note/{n.Id}");
+
+        Postid = n.Id;
+        Title = n.Title;
+        Body = n.Body;
+
+    }
+    private async Task AddNote()
+    {
+        NavManager.NavigateTo($"/note/add");
+    }
+
+    private async Task DeleteNote()
+    {
+        await Http.DeleteAsync($"https://localhost:7116/api/Note/" + Postid);
+        notes = await Http.GetFromJsonAsync<List<Note>>($"https://localhost:7116/api/Note/{surnameMessage}");
+        Elements = await Http.GetFromJsonAsync<List<Note>>($"https://localhost:7116/api/Note/{surnameMessage}");
+
+        Postid = -1;
+        Title = "";
+        Body = "";
+    }
+    private async Task UpdateNote()
+    {
+        updateNote.Id = Postid;
+        updateNote.Title = Title;
+        updateNote.Body = Body;
+        updateNote.CreateDate = DateTime.Now;
+        await Http.PutAsJsonAsync("https://localhost:7116/api/Note/", updateNote);
+
+        Elements = await Http.GetFromJsonAsync<List<Note>>($"https://localhost:7116/api/Note/{surnameMessage}");
+
+        notes = await Http.GetFromJsonAsync<List<Note>>($"https://localhost:7116/api/Note/{surnameMessage}");
+        Postid = -1;
+        Title = "";
+        Body = "";
+    }
+
+
+}
+
+

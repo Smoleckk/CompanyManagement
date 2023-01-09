@@ -1,0 +1,124 @@
+﻿@page "/contractor"
+@inject HttpClient Http
+@inject NavigationManager NavManager
+@attribute [Authorize]
+
+<h2 class="border-bottom m-2 border-dark">
+    Kontrahent
+    <small class="text-muted">wszyscy kontrahenci w systemie</small>
+</h2>
+<MudPaper Class="d-flex bg-light mb-3">
+    <MudBreadcrumbs Items="_items"></MudBreadcrumbs>
+    <MudSpacer />
+    <MudIconButton Icon="@Icons.Filled.AddBox" Color="Color.Dark" OnClick="AddBuyer"></MudIconButton>
+</MudPaper>
+<MudTable Dense="true" ServerData="@(new Func<TableState, Task<TableData<Buyer>>>(ServerReload))"
+          @ref="table">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Kontrahent</MudText>
+        <MudSpacer />
+        <MudTextField T="string" ValueChanged="@(s=>OnSearch(s))" Placeholder="Search" Adornment="Adornment.Start"
+                      AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh><MudTableSortLabel SortLabel="Name" T="Buyer">Name</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="Adres" T="Buyer">Adres</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="PostCode" T="Buyer">PostCode</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="NIP" T="Buyer">NIP</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="Country" T="Buyer">Country</MudTableSortLabel></MudTh>
+        @*<MudTh><MudTableSortLabel T="Buyer">Akcje</MudTableSortLabel></MudTh>*@
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Name">
+            <a class="text-info " style="cursor:pointer" @onclick="()=>InfoBuyer(context)">@context.Name</a>
+        </MudTd>
+        <MudTd DataLabel="Adres">@context.Adres</MudTd>
+        <MudTd DataLabel="PostCode">@context.PostCode</MudTd>
+        <MudTd DataLabel="NIP">@context.NIP</MudTd>
+        <MudTd DataLabel="Country">@context.Country</MudTd>
+        @*        <MudTd DataLabel="Akcje" Style="d-flex">
+        <a class="d-flex column-form align-items-center justify-content-around align-items-center" @onclick="()=>InfoBuyer(context)"><i style="cursor:pointer" class="fa fa-user-circle-o"></i></a>
+
+        </MudTd>*@
+    </RowTemplate>
+    <NoRecordsContent>
+        <MudText>No matching records found</MudText>
+    </NoRecordsContent>
+    <LoadingContent>
+        <MudText>Loading...</MudText>
+    </LoadingContent>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+@code {
+    private List<BreadcrumbItem> _items = new List<BreadcrumbItem>
+    {
+     new BreadcrumbItem("Home", href: "/", icon: Icons.Material.Filled.Home),
+        new BreadcrumbItem("Kontrahenci",  href: null, disabled: true)
+    };
+    private IEnumerable<Buyer> pagedData;
+    private MudTable<Buyer> table;
+    private int totalItems;
+    private string searchString = null;
+    private IEnumerable<Buyer>? data;
+
+    private async Task<TableData<Buyer>> ServerReload(TableState state)
+    {
+        data = await Http.GetFromJsonAsync<List<Buyer>>("https://localhost:7116/api/Buyer");
+        await Task.Delay(300);
+        data = data.Where(element =>
+        {
+            if (string.IsNullOrWhiteSpace(searchString))
+                return true;
+            if (element.Name.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+                return true;
+            if (element.NIP.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+                return true;
+            if ($"{element.Country} {element.PostCode} {element.Adres}".Contains(searchString))
+                return true;
+            return false;
+        }).ToArray();
+        totalItems = data.Count();
+        switch (state.SortLabel)
+        {
+            case "Name":
+                data = data.OrderByDirection(state.SortDirection, o => o.Name);
+                break;
+            case "Adres":
+                data = data.OrderByDirection(state.SortDirection, o => o.Adres);
+                break;
+            case "PostCode":
+                data = data.OrderByDirection(state.SortDirection, o => o.PostCode);
+                break;
+            case "NIP":
+                data = data.OrderByDirection(state.SortDirection, o => o.NIP);
+                break;
+            case "Country":
+                data = data.OrderByDirection(state.SortDirection, o => o.Country);
+                break;
+        }
+
+        pagedData = data.Skip(state.Page * state.PageSize).Take(state.PageSize).ToArray();
+        return new TableData<Buyer>() { TotalItems = totalItems, Items = pagedData };
+    }
+
+    private void OnSearch(string text)
+    {
+        searchString = text;
+        table.ReloadServerData();
+    }
+    private async Task EditBuyer(Buyer n)
+    {
+        NavManager.NavigateTo($"/contractor/{n.id}");
+    }
+
+    private async Task AddBuyer()
+    {
+        NavManager.NavigateTo($"/contractor/add");
+    }
+    private async Task InfoBuyer(Buyer n)
+    {
+        NavManager.NavigateTo($"/contractor/info/{n.id}");
+    }
+}

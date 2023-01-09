@@ -1,0 +1,463 @@
+﻿@page "/invoice-data"
+@page "/invoice-data/{id}"
+@page "/invoice-order-data/{orderId}"
+
+
+@using InvoicePWABlazor.Dtos
+@inject HttpClient Http
+@inject NavigationManager NavManager
+@attribute [Authorize]
+<h2 class="border-bottom m-2 border-dark">
+    Faktura
+    <small class="text-muted">utwórz fakturę sprzedażową</small>
+</h2>
+<MudPaper Class="d-flex bg-light">
+    @if (id == null)
+    {
+        <MudBreadcrumbs Items="_items2"></MudBreadcrumbs>
+        <MudSpacer />
+        @*<MudIconButton Icon="@Icons.Filled.Save" Color="Color.Dark" OnClick="AddInvoice"></MudIconButton>*@
+    }
+    else
+    {
+        <MudBreadcrumbs Items="_items"></MudBreadcrumbs>
+        <MudSpacer />
+        @*<MudIconButton Icon="@Icons.Filled.Save" Color="Color.Dark" OnClick="SaveChanges"></MudIconButton>*@
+    }
+</MudPaper>
+
+<div class="div-2 d-flex  mx:auto align-items-center  justify-content-center">
+    <form onsubmit="@AddInvoice" class=" responsive-table mt-4 mb-4 shadow p-3 mb-5 bg-white rounded" style=" height:100%; min-height:90vh">
+        <div>
+            <div class="d-flex column-all ">
+                <div class="d-flex flex-column ww-50" style="min-height: 300px;">
+                    <div class="form-group width">
+                        <label>Sprzedawca</label>
+                        <textarea class="form-control" style="font-size:13px;" placeholder="" rows="4" @bind="invoiceDto.seller"></textarea>
+                    </div>
+                    <div class="form-group width">
+                        <label>Nabywca</label>
+                        @if (id == null && orderId == null)
+                        {
+                            <select @onchange="FillContractor" class="form-select mb-2" style="font-size:13px;height:30px;">
+                                <option style="font-size:13px" disabled selected>Wybierz kontrahenta</option>
+                                @foreach (var b in buyers)
+                                {
+                                    <option style="font-size:13px;" value="@b.Name">@b.Name</option>
+
+                                }
+                            </select>
+                            <textarea required class="form-control" disabled style="font-size:13px;" placeholder="" rows="4" @bind="invoiceDto.buyer"></textarea>
+                        }
+                        else
+                        {
+                            <textarea required class="form-control" disabled style="font-size:13px;" placeholder="" rows="4" @bind="invoiceDto.buyer"></textarea>
+                        }
+
+                    </div>
+                </div>
+                <div class="d-flex flex-column  ww-50" style="min-height: 200px;">
+                    <div class="form-group ">
+                        <label class="w-100 border-bottom">FAKTURA</label>
+                        <div class="d-flex column justify-content-between mt-2">
+                            <label style="font-size:13px;" class="mb-0">Miejsce wystawienia</label>
+                            <input type="text" required @bind="invoiceDto.placeOfIssue" class="form-control column-width" style="font-size:13px;height:30px">
+                        </div>
+                        <div class="d-flex column justify-content-between mt-2">
+                            <label style="font-size:13px;">Numer faktury</label>
+                            <input type="text" @bind="invoiceDto.invoiceNumber" class="form-control column-width " style="font-size:13px;height:30px">
+                        </div>
+                        <div class="d-flex justify-content-between mt-2 column">
+                            <label style="font-size:13px;">Data wystawienia</label>
+                            <input type="date" @bind="invoiceDto.dateOfIssue" class="form-control column-width " style="font-size:13px;height:30px">
+                        </div>
+                        <div class="d-flex justify-content-between mt-2 column">
+                            <label style="font-size:13px;">Data wykonania</label>
+                            <input type="date" @bind="invoiceDto.dateOfExecution" class="form-control column-width " style="font-size:13px;height:30px">
+                        </div>
+                    </div>
+                    <div class="form-group ">
+                        <label class=" w-100 border-bottom">SZCZEGOLY</label>
+                        <div class="d-flex column justify-content-between mt-2">
+                            <label style="font-size:13px;" class="mb-0">Sposob platnosci</label>
+                            <select @bind="invoiceDto.typeOfPay" class="form-control  column-width " style="font-size:13px;height:30px;">
+                                <option style="font-size:13px;" value="Przelew">Przelew</option>
+                                <option style="font-size:13px;" value="Gotowka">Gotowka</option>
+                            </select>
+                        </div>
+                        <div class="d-flex justify-content-between mt-2 column ">
+                            <label style="font-size:13px;">Data platnosci</label>
+                            <input type="date" @bind="invoiceDto.dateOfPay" class="form-control column-width  " style="font-size:13px;height:30px">
+                        </div>
+                        <div class="d-flex column justify-content-between mt-2 pb-2 column border-bottom">
+                            <label style="font-size:13px;" class="mb-0">Status platnosci</label>
+                            <select @bind="invoiceDto.payStatus" class="form-control  column-width " style="font-size:13px;height:30px;">
+                                <option style="font-size:13px;" value="Oplacaona">Oplacaona</option>
+                                <option style="font-size:13px;" value="Nieoplacona">Nieoplacona</option>
+                            </select>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <select @onchange="FillItem" class="form-select mb-2" style="font-size:13px;height:30px;">
+            <option style="font-size:13px" disabled selected>Wybierz nazwe towaru lub uslugi</option>
+            @foreach (var item in items)
+            {
+                <option style="font-size:13px;" value="@item.Name">@item.Name</option>
+            }
+        </select>
+
+        <div class="flex-column align-items-center justify-content-around hiddenOrDisplayBig">
+            <div class="w-100 h-25 rounded" style="background-color:lightgrey; padding:10px ">
+                <h6 style="font-size:16px;" class="">Pozycja na fakturze </h6>
+            </div>
+            <table class="table ">
+                <thead>
+                    <tr class="">
+                        <th style="width:20%; padding:2px" scope="col"><h6 style="font-size:13px">Nazwa towaru lub uslugi</h6></th>
+                        <th style="width:5% ; padding:2px" scope="col"><h6 style="font-size:13px">Ilosc</h6></th>
+                        <th style="width:5%; padding:2px" scope="col"><h6 style="font-size:13px">Jednostka</h6></th>
+                        <th style="width:5%; padding:2px" scope="col"><h6 style="font-size:13px">Cena netto</h6></th>
+                        <th style="width:5%; padding:2px" scope="col"><h6 style="font-size:13px">Stawka VAT</h6></th>
+                        <th style="width:5%; padding:2px" scope="col"><h6 style="font-size:13px">Wartosc netto</h6></th>
+                        <th style="width:5%; padding:2px" scope="col"><h6 style="font-size:13px">Wartosc brutto</h6></th>
+                        <th style="width:5%; padding:2px" scope="col"><h6 style="font-size:13px">Akcje</h6></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="width:20%; padding:2px" class=""><input type="text" class="form-control" style="font-size:13px;height:30px; min-width:200px;" placeholder="" @bind="name"></td>
+                        <td style="width:5%; padding:2px" class=""><input type="number" class="form-control" style="font-size:13px;height:30px; min-width:60px" @bind="quantity" @onfocusout="SearchChanged"></td>
+                        <td style="width:5%; padding:2px" class="">
+                            <select @bind="unit" class="form-control" style="font-size:13px;height:30px;">
+                                <option value="Szt">Szt</option>
+                                <option value="Paleta">Paleta</option>
+                            </select>
+                        </td>
+                        <td style="width:5%; padding:2px" class=""><input type="number" class="form-control" style="font-size:13px;height:30px; min-width:60px" @bind="price" @onfocusout="SearchChanged"></td>
+                        <td style="width:5%; padding:2px" class=""><input type="number" class="form-control" style="font-size:13px;height:30px; min-width:60px" @bind=vat></td>
+                        <td style="width:5%; padding:2px" class=""><input type="number" class="form-control" style="font-size:13px;height:30px; min-width:60px" @bind="nettoPrice"></td>
+                        <td style="width:5%; padding:2px" class=""><input type="number" class="form-control" style="font-size:13px;height:30px; min-width:60px" @bind="bruttoPrice"></td>
+                        <td scope="col" style="width:2%">
+                            <a class="d-flex column-form align-items-center justify-content-around align-items-center" @onclick="addPtoduct"><i style="cursor:pointer" class="fa fa-plus"></i></a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            @if (products != null)
+            {
+                <table class="table table-striped ">
+                    <tbody>
+                        @foreach (var p in products)
+                        {
+                            <tr>
+                                <th scope="col" style="width:20%; height:10px"><h6 style="font-size:13px; ">@p.name</h6></th>
+                                <th scope="col" style="width:5%"><h6 style="font-size:13px">@p.quantity</h6></th>
+                                <th scope="col" style="width:5%"><h6 style="font-size:13px">@p.unit</h6></th>
+                                <th scope="col" style="width:5%"><h6 style="font-size:13px">@p.price</h6></th>
+                                <th scope="col" style="width:5%"><h6 style="font-size:13px">@p.vat</h6></th>
+                                <th scope="col" style="width:5%"><h6 style="font-size:13px">@p.nettoPrice</h6></th>
+                                <th scope="col" style="width:5%"><h6 style="font-size:13px">@p.bruttoPrice</h6></th>
+                                <th scope="col" style="width:5%">
+                                    <a class="d-flex column-form align-items-center justify-content-around align-items-center" @onclick="()=>deleteProduct(p)"><i style="cursor:pointer" class="fa fa-trash"></i></a>
+                                </th>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+
+        @*table for mobile*@
+        <div class="flex-column align-items-center justify-content-around w-100 hiddenOrDisplaySmall">
+            <div class="  mt-4 shadow p-3 mb-1 bg-white rounded" style="width:90%">
+                <div class="w-100"><h4>Nazwa towaru lub uslugi</h4></div>
+                <input type="text" class="form-control ww-100" style="font-size:13px;height:30px" @bind="name">
+                <div class="w-100"><h6 style="font-size:13px">Ilosc</h6></div>
+                <input type="number" class="form-control ww-100" style="font-size:13px;height:30px" @onfocusout="SearchChanged" @bind="quantity">
+                <div class="w-100"><h6 style="font-size:13px">Jednostka</h6></div>
+                <input type="text" class="form-control ww-100" style="font-size:13px;height:30px" @bind="unit">
+                <div class="w-100"><h6 style="font-size:13px">Cena netto</h6></div>
+                <input type="number" class="form-control ww-100" style="font-size:13px;height:30px" @onfocusout="SearchChanged" @bind="price">
+                <div class="w-100"><h6 style="font-size:13px">Vat %</h6></div>
+                <input type="number" class="form-control ww-100" style="font-size:13px;height:30px" @bind="vat">
+                <div class="w-100"><h6 style="font-size:13px">Wartosc netto</h6></div>
+                <input type="number" class="form-control ww-100" style="font-size:13px;height:30px" @bind="nettoPrice">
+                <div class="w-100"><h6 style="font-size:13px">Wartosc brutto</h6></div>
+                <input type="number" class="form-control ww-100" style="font-size:13px;height:30px" @bind="bruttoPrice">
+                <a class="d-flex column-form align-items-center justify-content-around align-items-center mt-3" @onclick="addPtoduct"><i style="cursor:pointer" class="fa fa-plus"></i></a>
+            </div>
+            @if (products != null)
+            {
+                @foreach (var p in products)
+                {
+                    <div class="mt-1 shadow p-3 mb-1 bg-white rounded" style="width:90%">
+
+                        <div class="d-flex justify-content-between">
+                            <p class="">Nazwa </p> <p> @p.name</p>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <p class="">Ilosc </p> <p> @p.quantity</p>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <p class="">Jednostka </p> <p> @p.unit</p>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <p class="">Cena netto </p> <p> @p.price</p>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <p class="">VAT % </p> <p> @p.vat</p>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <p class="">Wartosc netto </p> <p> @p.nettoPrice</p>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <p class="">Wartosc brutto </p> <p> @p.bruttoPrice</p>
+                        </div>
+                        <a class="d-flex column-form align-items-center justify-content-around align-items-center" @onclick="()=>deleteProduct(p)"><i style="cursor:pointer" class="fa fa-trash"></i></a>
+                    </div>
+                }
+            }
+        </div>
+
+        @*podsumowanie*@
+        <div class="d-flex column-all ">
+            <div class="d-flex flex-column ww-50 " style="">
+            </div>
+            <div class="d-flex flex-column  ww-50" style="height: 100px; ">
+                <div class="form-group ">
+                    <div class="d-flex  justify-content-around mt-3 pb-2 border-bottom">
+                        <h6 style="font-size:13px"><b>Suma netto</b></h6>
+                        <h6 style="font-size:13px">PLN</h6>
+                        <h6 style="font-size:13px">@finalNettoPrice()</h6>
+
+                    </div>
+                    <div class="d-flex  justify-content-around pb-2 border-bottom">
+                        <h6 style="font-size:13px"><b>Suma VAT</b></h6>
+                        <h6 style="font-size:13px">PLN</h6>
+                        <h6 style="font-size:13px">@finalVatPrice()</h6>
+
+                    </div>
+                    <div class="d-flex  justify-content-around  pb-2 border-bottom">
+                        <h6 style="font-size:13px"><b>Suma brutto</b></h6>
+                        <h6 style="font-size:13px">PLN</h6>
+                        <h6 style="font-size:13px">@finalPrice()</h6>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+        @if (id == null)
+        {
+            <div class="d-flex justify-content-around flex-wrap mt-5">
+
+                <button type="submit"><MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save" Color="Color.Info" Size="Size.Small">Zapisz</MudButton></button>
+            </div>
+        }
+        else
+        {
+            <div class="d-flex justify-content-around flex-wrap mt-5">
+                <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save" Color="Color.Info" Size="Size.Small" OnClick="SaveChanges">Zapisz</MudButton>
+            </div>
+        }
+    </form>
+
+</div>
+
+
+
+@code {
+
+    [Parameter]
+    public string id { get; set; }
+
+    [Parameter]
+    public string orderId { get; set; }
+
+
+    //private string payStatus = "Nieoplacona";
+
+    InvoiceDto invoiceDto = new InvoiceDto("Firma A \nPrzemyslowa 54 \n00-002 Warszawa \nNIP 51916729272 ", "", "Krasnik", "#23/02/Invoice/2", DateTime.Now, DateTime.Now, "Przelew", DateTime.Now, 0, 0, "Nieoplacona", new List<Product>());
+
+    private string name = "";
+    private double quantity = 1;
+    private string unit = "Szt";
+    private double price = 0;
+    private double vat = 23;
+    private double nettoPrice;
+    private double bruttoPrice;
+
+    private List<Product> products = new();
+    Random rnd = new Random();
+    Buyer buyer = new Buyer();
+    List<Buyer> buyers = new();
+
+    private string stringValue { get; set; }
+
+    private Item enumValue { get; set; }
+    List<Item> items = new();
+
+    private Invoice invoice { get; set; }
+    private Order order = new Order();
+
+    protected override async Task OnInitializedAsync()
+    {
+        buyers = await Http.GetFromJsonAsync<List<Buyer>>($"https://localhost:7116/api/Buyer");
+        items = await Http.GetFromJsonAsync<List<Item>>($"https://localhost:7116/api/Item");
+
+        if (id != null)
+        {
+            invoice = await Http.GetFromJsonAsync<Invoice>($"https://localhost:7116/api/Invoice/{id}");
+            products = invoice.products;
+            invoiceDto.seller = invoice.seller;
+            invoiceDto.buyer = invoice.buyer;
+
+            invoiceDto.placeOfIssue = invoice.placeOfIssue;
+            invoiceDto.invoiceNumber = invoice.invoiceNumber;
+            invoiceDto.dateOfIssue = invoice.dateOfIssue;
+            invoiceDto.dateOfExecution = invoice.dateOfExecution;
+
+            invoiceDto.typeOfPay = invoice.typeOfPay;
+            invoiceDto.dateOfPay = invoice.dateOfPay;
+            invoiceDto.payStatus = invoice.payStatus;
+        }
+        if (orderId != null)
+        {
+            order = await Http.GetFromJsonAsync<Order>($"https://localhost:7116/api/Order/{orderId}");
+            products = order.Products;
+            invoiceDto.buyer = order.Buyer;
+        }
+        SearchChanged();
+    }
+
+    private async Task FillItem(ChangeEventArgs e)
+    {
+        Item i = items.FirstOrDefault(i => i.Name == e.Value.ToString());
+
+        name = i.Name;
+        unit = i.Unit;
+        price = i.Price;
+        unit = "Szt";
+        nettoPrice = i.Price;
+        SearchChanged();
+    }
+    Buyer b;
+    private async Task FillContractor(ChangeEventArgs e)
+    {
+        b = buyers.FirstOrDefault(i => i.Name == e.Value.ToString());
+
+        invoiceDto.buyer = b.Name + "\nNIP: " + b.NIP + "\n" + b.Adres + "\n" + b.PostCode;
+
+        SearchChanged();
+    }
+
+
+    private async Task SaveChanges()
+    {
+        Invoice i = new Invoice(invoice.id, invoiceDto.seller, invoiceDto.buyer, invoiceDto.placeOfIssue, invoiceDto.invoiceNumber, invoiceDto.dateOfIssue, invoiceDto.dateOfExecution, invoiceDto.typeOfPay, invoiceDto.dateOfPay, finalNettoPrice(), finalPrice(), invoiceDto.payStatus, products);
+
+        await Http.PutAsJsonAsync("https://localhost:7116/api/Invoice", i);
+        Console.WriteLine(invoiceDto.payStatus);
+        NavManager.NavigateTo($"/invoice-page/{invoice.id}");
+    }
+
+    private async Task Back()
+    {
+        NavManager.NavigateTo($"/table");
+    }
+
+    private async Task AddInvoice()
+    {
+        //buyer = buyers.FirstOrDefault(n => n.Name == invoiceDto.buyer);
+
+        buyer = buyers.FirstOrDefault(n => n.Name == b.Name);
+        if (buyer != null)
+        {
+            Invoice i = new Invoice(0, invoiceDto.seller, invoiceDto.buyer, invoiceDto.placeOfIssue, invoiceDto.invoiceNumber, invoiceDto.dateOfIssue, invoiceDto.dateOfExecution, invoiceDto.typeOfPay, invoiceDto.dateOfPay, finalNettoPrice(), finalPrice(), invoiceDto.payStatus, products);
+            buyer.Invoices = new List<Invoice> { i };
+            buyer.Orders = new List<Order>();
+            await Http.PutAsJsonAsync("https://localhost:7116/api/Buyer", buyer);
+            NavManager.NavigateTo($"/table");
+        }
+
+
+
+
+        //invoiceDto.products = products;
+        //await Http.PostAsJsonAsync("https://localhost:7116/api/Invoice", invoiceDto);
+        //NavManager.NavigateTo($"/table");
+
+    }
+
+    private void addPtoduct()
+    {
+
+        products.Add(new Product(0, name, quantity, unit, price, vat, nettoPrice, bruttoPrice));
+
+        name = "";
+        quantity = 1;
+        unit = "Szt";
+        price = 0;
+        vat = 0;
+        nettoPrice = 0;
+        bruttoPrice = 0;
+    }
+    private void SearchChanged()
+    {
+        nettoPrice = quantity * price;
+        bruttoPrice = nettoPrice + (nettoPrice * (vat / 100));
+        nettoPrice = Math.Round(nettoPrice, 2);
+        bruttoPrice = Math.Round(bruttoPrice, 2);
+    }
+
+    private void deleteProduct(Product p)
+    {
+        products.Remove(p);
+    }
+
+
+    private double finalNettoPrice()
+    {
+        double sum = 0;
+        foreach (var prop in products)
+        {
+            sum += prop.nettoPrice;
+        }
+        return Math.Round(sum, 2);
+    }
+    private double finalVatPrice()
+    {
+        double sum = 0;
+        foreach (var prop in products)
+        {
+            sum += prop.bruttoPrice - prop.nettoPrice;
+        }
+        return Math.Round(sum, 2);
+    }
+    private double finalPrice()
+    {
+        double sum = 0;
+        foreach (var prop in products)
+        {
+            sum += prop.bruttoPrice;
+        }
+        return Math.Round(sum, 2);
+    }
+    private List<BreadcrumbItem> _items = new List<BreadcrumbItem>
+    {
+     new BreadcrumbItem("Home", href: "/", icon: Icons.Material.Filled.Home),
+        new BreadcrumbItem("Faktury", href: "/table"),
+        //new BreadcrumbItem("Szczegóły", href: "/invoice-page/{id}"),
+        new BreadcrumbItem("Edytuj", href: null, disabled: true),
+    };
+    private List<BreadcrumbItem> _items2 = new List<BreadcrumbItem>
+    {
+     new BreadcrumbItem("Home", href: "/", icon: Icons.Material.Filled.Home),
+        new BreadcrumbItem("Faktury", href: "/table"),
+        new BreadcrumbItem("Dodaj", href: null, disabled: true),
+    };
+}

@@ -1,0 +1,99 @@
+﻿@page "/item/{id}"
+@page "/item/add"
+@inject HttpClient Http
+@inject NavigationManager NavManager
+@attribute [Authorize]
+
+@*@if (b.id != null)
+{*@
+<h2 class="border-bottom m-2 border-dark">
+    Produkt
+    <small class="text-muted">dodaj/edytuj produkt</small>
+</h2>
+<MudPaper Class="d-flex bg-light mb-3">
+    <MudBreadcrumbs Items="_items"></MudBreadcrumbs>
+    <MudSpacer />
+</MudPaper>
+<MudPaper Class="p-md-5 pt-3 pb-3">
+    <EditForm Model="@i" OnValidSubmit="OnValidSubmit">
+        <DataAnnotationsValidator />
+        <MudCardContent>
+            <MudTextField Label="Nazwa"
+                          @bind-Value="i.Name" For="@(() => i.Name)" />
+            <MudTextField Label="Ilosc" Class="mt-3" HelperText="Minimum 10 znakow"
+                          @bind-Value="i.Quantity" For="@(() => i.Quantity)" />
+            <MudTextField Label="Rodzaj pakowania"
+                          @bind-Value="i.Unit" For="@(() => i.Unit)" />
+            <MudTextField Label="Cena brutto"
+                          @bind-Value="i.Price" For="@(() => i.Price)" />
+            <MudTextField Label="Vat"
+                          @bind-Value="i.Vat" For="@(() => i.Vat)" />
+            <MudTextField Label="Opis"
+                          @bind-Value="i.Desc" For="@(() => i.Desc)" />
+        </MudCardContent>
+        <MudCardActions>
+            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save" Color="Color.Info" Size="Size.Small" Class="ml-auto">Zapisz</MudButton>
+        </MudCardActions>
+    </EditForm>
+</MudPaper>
+@*}*@
+
+@code {
+    private List<BreadcrumbItem> _items = new List<BreadcrumbItem>
+    {
+     new BreadcrumbItem("Home", href: "/", icon: Icons.Material.Filled.Home),
+        new BreadcrumbItem("Produkty",  href: "item"),
+        new BreadcrumbItem("Dodaj",  href: null, disabled: true)
+
+    };
+    [Parameter]
+    public string id { get; set; }
+
+    private Item i = new Item();
+    private ItemDto iDto = new ItemDto
+        {
+            Vat = 23
+        };
+    bool success;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (id != null)
+        {
+            i = await Http.GetFromJsonAsync<Item>($"https://localhost:7116/api/Item/{id}");
+        }
+    }
+
+    //private async Task AddBuyer()
+    //{
+    //    iDto.Name = i.Name;
+    //    iDto.Quantity = i.Quantity;
+    //    await Http.PostAsJsonAsync("https://localhost:7116/api/Item", iDto);
+    //    NavManager.NavigateTo($"/item");
+    //}
+    private async void OnValidSubmit(EditContext context)
+    {
+        success = true;
+        StateHasChanged();
+        if (id == null)
+        {
+            iDto.Name = i.Name;
+            iDto.Quantity = i.Quantity;
+            iDto.Unit = i.Unit;
+            iDto.Price = i.Price;
+            iDto.Vat = i.Vat;
+            iDto.Desc = i.Desc;
+            iDto.NettoPrice = Math.Round(i.Price + (i.Price * (i.Vat / 100)), 2);
+            iDto.BruttoPrice = i.Price;
+
+            await Http.PostAsJsonAsync("https://localhost:7116/api/Item", iDto);
+            NavManager.NavigateTo($"/item");
+        }
+        else
+        {
+            await Http.PutAsJsonAsync("https://localhost:7116/api/Item", i);
+            NavManager.NavigateTo($"/item");
+        }
+    }
+
+}

@@ -1,0 +1,175 @@
+﻿@media print {
+    body {
+        -webkit-print-color-adjust: exact;
+    }
+}
+
+.whitebackground {
+    background-color: #fff;
+    color: black;
+}
+
+h4 {
+    font-size: 14px;
+}
+
+table th, table td {
+    text-align: center;
+}
+
+.width {
+    width: 75%;
+}
+
+.column-width {
+    width: 50%;
+}
+
+/*button {
+    width: 200px;
+}*/
+
+.responsive-table {
+    width: 70%;
+}
+
+.ww-50 {
+    width: 50%;
+}
+
+.ww-90 {
+    width: 90%;
+}
+
+.hiddenOrDisplaySmall {
+    display: none;
+}
+
+.hiddenOrDisplayBig {
+    display: flex;
+}
+
+.hide-page {
+    display: none;
+}
+
+@media screen and (max-width: 1600px) {
+    .width {
+        width: 90%;
+    }
+
+    /*    .column {
+        flex-direction: column;
+    }*/
+
+
+    .responsive-table {
+        width: 70%;
+    }
+
+    .ww-50 {
+        width: 50%;
+    }
+
+    .column-width {
+        width: 50%;
+    }
+
+    .hiddenOrDisplaySmall {
+        display: none;
+    }
+
+    .hiddenOrDisplayBig {
+        display: flex;
+    }
+}
+
+@media screen and (max-width: 900px) {
+    .width {
+        width: 95%;
+    }
+
+    .column {
+        flex-direction: column;
+    }
+
+    .column-all {
+        flex-direction: column;
+    }
+
+    .ww-50 {
+        width: 100%;
+    }
+
+    .column-width {
+        width: 100%;
+    }
+
+    .responsive-table {
+        width: 95%;
+    }
+
+    .hiddenOrDisplaySmall {
+        display: flex;
+    }
+
+    .hiddenOrDisplayBig {
+        display: none;
+    }
+
+    h2 {
+        font-size: 20px;
+    }
+}
+
+.color-print {
+    background-color: lightgray !important;
+}
+
+.marginTop {
+    margin-top: 200px;
+}
+
+a4 page
+body {
+    background: white;
+}
+
+page {
+    background: white;
+}
+
+
+/*a4 orderPage
+body {
+    background: white;
+}
+
+orderPage {
+    background: white;
+}*/
+/*body {
+    background: rgb(204,204,204);
+}
+
+page {
+    background: white;
+    display: block;
+    margin: 0 auto;
+    margin-bottom: 0.5cm;
+    box-shadow: 0 0 0.5cm rgba(0,0,0,0.5);
+}
+
+    page[size="A4"] {
+        width: 21cm;
+        height: 29.7cm;
+    }
+*/
+
+
+
+
+
+
+
+

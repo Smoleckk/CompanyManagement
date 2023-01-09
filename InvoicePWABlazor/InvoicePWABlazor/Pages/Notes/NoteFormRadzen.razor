@@ -1,0 +1,91 @@
+﻿@*@page "/note-radzen"*@
+@page "/note/{id}"
+@page "/note/add"
+@inject HttpClient Http
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavManager
+@attribute [Authorize]
+@using Radzen
+@using Radzen.Blazor
+
+<h2 class="border-bottom m-2 border-dark">
+    Faktura
+    <small class="text-muted">utworz notatke</small>
+</h2>
+
+<RadzenText TextStyle="TextStyle.H6" TagName="TagName.H3" Class="my-4">Default set of tools</RadzenText>
+<RadzenHtmlEditor @bind-Value=@Body style="height: 500px; margin-bottom: 1rem;" UploadUrl="upload/image" />
+
+
+<MudButton StartIcon="@Icons.Filled.Edit" Color="Color.Error" Size="Size.Small" OnClick="DeleteNote" Class="m-4">Usun</MudButton>
+<MudButton StartIcon="@Icons.Material.Filled.Save" Color="Color.Info" Size="Size.Small" OnClick="UpdateNote">Edytuj</MudButton>
+<MudButton StartIcon="@Icons.Material.Filled.Save" Color="Color.Info" Size="Size.Small" OnClick="AddNote">Zapisz</MudButton>
+
+@code {
+    string value = @"<h1>Radzen</h1>";
+
+    [Parameter]
+    public string id { get; set; }
+
+
+    public NoteDto? n = new NoteDto();
+    Note updateNote = new Note();
+
+    int Postid = -1;
+    string Title = "";
+    string Body = @"";
+    private string surnameMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity.IsAuthenticated)
+        {
+            surnameMessage = user.Identity.Name;
+        }
+        else
+        {
+            surnameMessage = "The user is NOT authenticated.";
+        }
+
+        if (id != null)
+        {
+            updateNote = await Http.GetFromJsonAsync<Note>($"https://localhost:7116/single-note/{id}");
+            Postid = updateNote.Id;
+            Title = updateNote.Title;
+            Body = updateNote.Body;
+        }
+
+    }
+    private async Task AddNote()
+    {
+
+        n.Title = "Title123";
+        n.Body = @"Title123";
+        n.CreateDate = DateTime.Now;
+        await Http.PostAsJsonAsync("https://localhost:7116/api/Note/" + surnameMessage, n);
+        NavManager.NavigateTo($"/note");
+
+    }
+
+    private async Task DeleteNote()
+    {
+        await Http.DeleteAsync($"https://localhost:7116/api/Note/" + Postid);
+        NavManager.NavigateTo($"/note");
+    }
+    private async Task UpdateNote()
+    {
+        updateNote.Id = Postid;
+        updateNote.Title = Title;
+        updateNote.Body = Body;
+        updateNote.CreateDate = DateTime.Now;
+        await Http.PutAsJsonAsync("https://localhost:7116/api/Note/", updateNote);
+        NavManager.NavigateTo($"/note");
+
+    }
+
+}

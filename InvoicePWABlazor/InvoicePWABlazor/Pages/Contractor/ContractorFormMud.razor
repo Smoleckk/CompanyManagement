@@ -1,0 +1,111 @@
+﻿@page "/contractor/{id}"
+@page "/contractor/add"
+@inject HttpClient Http
+@inject NavigationManager NavManager
+@attribute [Authorize]
+
+@*@if (b.id != null)
+{*@
+<h2 class="border-bottom m-2 border-dark">
+    Kontrahent
+    <small class="text-muted">dodaj/edytuj kontrahenta</small>
+</h2>
+<MudPaper Class="d-flex bg-light mb-3">
+    @if (id == null)
+    {
+        <MudBreadcrumbs Items="_items2"></MudBreadcrumbs>
+        <MudSpacer />
+    }
+    else
+    {
+        <MudBreadcrumbs Items="_items"></MudBreadcrumbs>
+        <MudSpacer />
+    }
+</MudPaper>
+
+<MudPaper Class="p-md-5 pt-3 pb-3">
+    <h5 class="pt-4 border-bottom"><b>Kontrahent: @b.Name</b></h5>
+    <EditForm Model="@b" OnValidSubmit="OnValidSubmit">
+        <DataAnnotationsValidator />
+        <MudCardContent>
+            <MudTextField Label="Nazwa"
+                          @bind-Value="b.Name" For="@(() => b.Name)" />
+            <MudTextField Label="NIP" Class="mt-3" HelperText="Minimum 10 znakow"
+                          @bind-Value="b.NIP" For="@(() => b.NIP)" />
+            <MudTextField Label="Adres" Class="mt-3"
+                          @bind-Value="b.Adres" For="@(() => b.Adres)" />
+            <MudTextField Label="Kod pocztowy" HelperText="ex. 00-002 Warszawa" Class="mt-3"
+                          @bind-Value="b.PostCode" For="@(() => b.PostCode)" />
+            <MudTextField Label="Kraj" Class="mt-3"
+                          @bind-Value="b.Country" For="@(() => b.Country)" />
+        </MudCardContent>
+        <MudCardActions>
+            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save" Color="Color.Info" Size="Size.Small" Class="ml-auto">Zapisz</MudButton>
+        </MudCardActions>
+    </EditForm>
+</MudPaper>
+@*}*@
+
+@code {
+    [Parameter]
+    public string id { get; set; }
+
+    private Buyer b = new Buyer();
+    private BuyerDto bDto = new BuyerDto();
+    bool success;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (id != null)
+        {
+            b = await Http.GetFromJsonAsync<Buyer>($"https://localhost:7116/api/Buyer/{id}");
+        }
+    }
+
+    private async Task AddBuyer()
+    {
+        bDto.Name = b.Name;
+        bDto.Adres = b.Adres;
+        bDto.PostCode = b.PostCode;
+        bDto.NIP = b.NIP;
+        bDto.Country = b.Country;
+        bDto.Invoices = new List<Invoice>();
+        await Http.PostAsJsonAsync("https://localhost:7116/api/Buyer", bDto);
+        NavManager.NavigateTo($"/contractor");
+    }
+    private async void OnValidSubmit(EditContext context)
+    {
+        success = true;
+        StateHasChanged();
+        if (id == null)
+        {
+            bDto.Name = b.Name;
+            bDto.Adres = b.Adres;
+            bDto.PostCode = b.PostCode;
+            bDto.NIP = b.NIP;
+            bDto.Country = b.Country;
+            bDto.Invoices = new List<Invoice>();
+            await Http.PostAsJsonAsync("https://localhost:7116/api/Buyer", bDto);
+            NavManager.NavigateTo($"/contractor");
+        }
+        else
+        {
+            b.Invoices = new List<Invoice>();
+            await Http.PutAsJsonAsync("https://localhost:7116/api/Buyer", b);
+            NavManager.NavigateTo($"/contractor/info/{id}");
+        }
+    }
+    private List<BreadcrumbItem> _items = new List<BreadcrumbItem>
+    {
+     new BreadcrumbItem("Home", href: "/", icon: Icons.Material.Filled.Home),
+        new BreadcrumbItem("Kontrahenci",  href: "/contractor"),
+        //new BreadcrumbItem("Szczegoly",  href: "/contractor/info/{id}"),
+        new BreadcrumbItem("Edytuj",  href: null, disabled: true),
+    };
+    private List<BreadcrumbItem> _items2 = new List<BreadcrumbItem>
+    {
+     new BreadcrumbItem("Home", href: "/", icon: Icons.Material.Filled.Home),
+        new BreadcrumbItem("Kontrahenci",  href: "/contractor"),
+        new BreadcrumbItem("Dodaj",  href: "", disabled: true),
+    };
+}

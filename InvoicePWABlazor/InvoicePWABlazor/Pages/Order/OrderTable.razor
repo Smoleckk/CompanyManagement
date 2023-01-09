@@ -1,0 +1,130 @@
+﻿@page "/order"
+@using InvoicePWABlazor.Shared.Common
+@inject HttpClient Http
+@inject NavigationManager NavManager
+@attribute [Authorize]
+
+<h2 class="border-bottom m-2 border-dark">
+    Zlecenia
+    <small class="text-muted">wszystkie wystawione zlecenia w systemie</small>
+</h2>
+<MudPaper Class="d-flex bg-light mb-3">
+    <MudBreadcrumbs Items="_items"></MudBreadcrumbs>
+    <MudSpacer />
+    <MudIconButton Icon="@Icons.Filled.AddBox" Color="Color.Dark" OnClick="AddOrder"></MudIconButton>
+</MudPaper>
+
+
+<MudTable Dense="true" ServerData="@(new Func<TableState, Task<TableData<Order>>>(ServerReload))"
+          Hover="true" @ref="table">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Zlecenia</MudText>
+        <MudSpacer />
+        <MudTextField T="string" ValueChanged="@(s=>OnSearch(s))" Placeholder="Search" Adornment="Adornment.Start"
+                      AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh><MudTableSortLabel SortLabel="OrderNumber" T="Order">Numer zlecenia</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="State" T="Order">Status</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="Buyer" T="Order">Kontrahent</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="DateOfIssue" T="Order">Data wystawienia</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="DateOfExecution" T="Order">Data zrealizowania</MudTableSortLabel></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd Class="text-success" DataLabel="Numer zlecenia"><a class="text-info" style="cursor:pointer" href="/order-page/@context.OrderId">@context.OrderNumber</a></MudTd>
+        <MudTd Class="text-success" DataLabel="Status">@context.State</MudTd>
+        <MudTd Class="text-success" DataLabel="Kontrahent">@context.Buyer</MudTd>
+        <MudTd Class="text-success" DataLabel="Data wystawienia">@context.DateOfIssue.ToString("dd'/'MM'/'yyyy")</MudTd>
+        <MudTd Class="text-success" DataLabel="Data zrealizowania">@context.DateOfExecution.ToString("dd'/'MM'/'yyyy")</MudTd>
+    </RowTemplate>
+    <NoRecordsContent>
+        <MudText>No matching records found</MudText>
+    </NoRecordsContent>
+    <LoadingContent>
+        <MudText>Loading...</MudText>
+    </LoadingContent>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+@code {
+    private List<BreadcrumbItem> _items = new List<BreadcrumbItem>
+    {
+     new BreadcrumbItem("Home", href: "/", icon: Icons.Material.Filled.Home),
+        new BreadcrumbItem("Faktury",  href: null, disabled: true)
+    };
+
+
+    private IEnumerable<Order> pagedData;
+    private MudTable<Order> table;
+
+    private int totalItems;
+    private string searchString = null;
+    private IEnumerable<Order>? data;
+
+    protected override async Task OnInitializedAsync()
+    {
+
+    }
+    private async Task<TableData<Order>> ServerReload(TableState state)
+    {
+        data = await Http.GetFromJsonAsync<List<Order>>("https://localhost:7116/api/Order");
+        data = data.Reverse();
+        await Task.Delay(300);
+        data = data.Where(element =>
+        {
+            if (string.IsNullOrWhiteSpace(searchString))
+                return true;
+            if (element.OrderNumber.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+                return true;
+            if (element.State.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+                return true;
+            if (element.Buyer.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+                return true;
+            if ($"{element.OrderNumber} {element.State} {element.Buyer}".Contains(searchString))
+                return true;
+            return false;
+        }).ToArray();
+        totalItems = data.Count();
+        switch (state.SortLabel)
+        {
+            case "OrderNumber":
+                data = data.OrderByDirection(state.SortDirection, o => o.OrderNumber);
+                break;
+            case "State":
+                data = data.OrderByDirection(state.SortDirection, o => o.State);
+                break;
+            case "Buyer":
+                data = data.OrderByDirection(state.SortDirection, o => o.Buyer);
+                break;
+            case "DateOfIssue":
+                data = data.OrderByDirection(state.SortDirection, o => o.DateOfIssue);
+                break;
+            case "DateOfExecution":
+                data = data.OrderByDirection(state.SortDirection, o => o.DateOfExecution);
+                break;
+        }
+
+        pagedData = data.Skip(state.Page * state.PageSize).Take(state.PageSize).ToArray();
+        return new TableData<Order>() { TotalItems = totalItems, Items = pagedData };
+    }
+
+    private void OnSearch(string text)
+    {
+        searchString = text;
+        table.ReloadServerData();
+    }
+
+    private async Task DeleteInvoice(int id)
+    {
+
+    }
+    private async Task AddOrder()
+    {
+        NavManager.NavigateTo($"/order/add");
+    }
+}
+
+
+

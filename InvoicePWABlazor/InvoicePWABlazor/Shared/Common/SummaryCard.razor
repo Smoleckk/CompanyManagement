@@ -1,0 +1,20 @@
+﻿<MudCard Class=" m-2 " Style="width:250px">
+    <MudCardContent>
+        <MudText>Oplacone faktury:</MudText>
+        <MudText Typo="Typo.body1">@paidInvoices</MudText>
+    </MudCardContent>
+    <MudCardActions>
+        <MudButton Variant="Variant.Text" Color="Color.Dark" OnClick="InvokeCalculate">Pokaz oplacone</MudButton>
+    </MudCardActions>
+</MudCard>
+@code {
+
+    [Parameter]
+    public int paidInvoices { get; set; }
+
+
+    [Parameter]
+    public EventCallback FiltrInvoices { get; set; }
+
+    private async Task InvokeCalculate() => await FiltrInvoices.InvokeAsync();
+}

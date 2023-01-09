@@ -1,0 +1,293 @@
+﻿@page "/invoice-page/{id}"
+@using Humanizer
+@using LiczbyNaSlowaNET
+@inject HttpClient Http
+@inject NavigationManager NavManager
+@attribute [Authorize]
+@inject IJSRuntime jsRuntime
+
+<h2 class="border-bottom m-2 border-dark">
+    Faktura sprzedażowa
+</h2>
+<MudPaper Class="d-flex bg-light">
+    <MudBreadcrumbs Items="_items"></MudBreadcrumbs>
+    <MudSpacer />
+    @*<MudIconButton Icon="@Icons.Filled.Print" Color="Color.Dark" OnClick="generatePDF()"></MudIconButton>*@
+    <MudIconButton Icon="@Icons.Filled.Edit" Color="Color.Dark" OnClick="Edit"></MudIconButton>
+    <MudIconButton Icon="@Icons.Filled.Print" Color="Color.Dark" OnClick="generatePDF"></MudIconButton>
+</MudPaper>
+<MudPaper MinHeight="90vh" MinWidth="500px" MaxWidth="900px" Class="mx-auto" Height="100%">
+    <MudContainer>
+        <page id="page">
+            <div class="container ">
+                @*style="width:90% ;"*@
+                <div class="row mt-5">
+                    <div class="col mt-5">
+                    </div>
+                    <div class="col d-flex flex-column align-items-center justify-content-around align-items-center  mt-5 ">
+                        <h4 class="border-top w-75 d-flex flex-column align-items-center rounded mt-2 color-print">Miejsce wystawienia</h4>
+                        <h4 class="m-1"><b>@invoice.placeOfIssue</b></h4>
+                        <h4 class="border-top w-75 d-flex flex-column align-items-center rounded mt-2 color-print">Data wystawienia</h4>
+                        <h4 class="m-1"><b>@invoice.dateOfIssue.ToString("dd'/'MM'/'yyyy");</b></h4>
+                        <h4 class="border-top w-75 d-flex flex-column align-items-center rounded mt-2 color-print">Data wykonania uslugi</h4>
+                        <h4 class="m-1"><b>@invoice.dateOfExecution.ToString("dd'/'MM'/'yyyy");</b></h4>
+
+                    </div>
+                </div>
+                <div class="row mt-5 ">
+
+                    <div class="col d-flex flex-column align-items-start justify-content-between align-items-center">
+                        <h4 class="border-top ww-90 d-flex flex-column align-items-center rounded color-print">
+                            <b>Sprzedawca</b>
+                        </h4>
+                        <h4 class="ww-90 align-items-start mt-2" style="white-space: pre-wrap;">@invoice.seller </h4>
+
+                    </div>
+                    <div class="col d-flex flex-column align-items-center justify-content-around align-items-center">
+                        <h4 class="border-top ww-90 d-flex flex-column align-items-center rounded color-print">
+                            <b>Nabywca</b>
+                        </h4>
+                        <h4 class="ww-90 align-items-start mt-2" style="white-space: pre-wrap;">@invoice.buyer</h4>
+                    </div>
+                </div>
+                <div class="row mt-5 mb-3">
+                    <div class="col d-flex flex-column align-items-center justify-content-around align-items-center">
+                        <h3><b>Faktura VAT @invoice.invoiceNumber</b></h3>
+                    </div>
+                </div>
+                <table class="table-bordered ">
+                    <thead class="color-print">
+                        <tr class="">
+                            <th style="width:2%"><h4 class="">Lp.</h4></th>
+                            <th style="width:15%"><h4>Nazwa towaru lub uslugi</h4></th>
+                            <th style="width:3%"><h4>Ilosc</h4></th>
+                            <th style="width:3%"><h4>Jed.</h4></th>
+                            <th style="width:5%"><h4>Cena netto</h4></th>
+                            <th style="width:3%"><h4>Stawka VAT</h4></th>
+                            <th style="width:5%"><h4>Wartosc netto</h4></th>
+                            <th style="width:5%; border-style:none"><h4>Wartosc brutto</h4></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (products != null)
+                        {
+                            @for (var i = 0; i < products.Count; i++)
+                            {
+                                <tr>
+                                    <td><h4>@i</h4></td>
+                                    <td><h4>@products[i].name</h4></td>
+                                    <td><h4>@products[i].quantity</h4></td>
+                                    <td><h4>@products[i].unit</h4></td>
+                                    <td><h4>@products[i].price</h4></td>
+                                    <td><h4>@products[i].vat</h4></td>
+                                    <td><h4>@products[i].nettoPrice</h4></td>
+                                    <td><h4>@products[i].bruttoPrice</h4></td>
+                                </tr>
+                            }
+                        }
+                        <tr style="border: none;">
+                            <td style="border: none;"><h4></h4></td>
+                            <td style="border: none;"><h4></h4></td>
+                            <td style="border: none;"><h4></h4></td>
+                            <td><h4><b>Razem</b></h4></td>
+                            <td><h4>@finalNettoPrice()</h4></td>
+                            <td><h4></h4></td>
+                            <td><h4>@finalVatPrice()</h4></td>
+                            <td><h4>@finalPrice()</h4></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="row mt-5">
+                    <div class="col">
+                        <div class="row ">
+                            <div class="col-5 mt-2 mb-2 ">
+                                <h4 class="p-0 m-0"><b>Sposob platnosci:</b></h4>
+                            </div>
+                            <div class="col-7 p-0 mt-2 mb-2 ">
+                                <h4 class="p-0 m-0">@invoice.typeOfPay</h4>
+                            </div>
+                        </div>
+                        <div class="row ">
+                            <div class="col-5 mt-2 mb-2 ">
+                                <h4 class="p-0 m-0"><b>Termin platnosci:</b></h4>
+                            </div>
+                            <div class="col-7 p-0 mt-2 mb-2 ">
+                                <h4 class="p-0 m-0">@invoice.dateOfPay.ToOrdinalWords();</h4>
+                            </div>
+                        </div>
+                        <div class="row ">
+                            <div class="col-5 mt-2 mb-2">
+                                <h4 class="p-0 m-0"><b>Numer konta:</b></h4>
+                            </div>
+                            <div class="col-7 p-0 mt-2 mb-2 ">
+                                <h4 class="p-0 m-0">26 0000 0000 0000 0000 0000 0000 </h4>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col ">
+
+                        <div class="row justify-content-end ">
+                            <div class="col-4  ">
+                                <h4 class="p-0 mt-2 mb-2"><b>Do zaplaty:</b></h4>
+                            </div>
+                            <div class="col-6 p-0 ">
+                                <h4 class="p-0 mt-2 mb-2">@finalPrice() PLN</h4>
+                            </div>
+                        </div>
+                        <div class="row justify-content-end">
+                            <div class="col-4  ">
+                                <h4 class="p-0 mt-2 mb-2"><b>Slownie: </b></h4>
+                            </div>
+                            <div class="col-6 p-0  ">
+                                <h4 class="p-0 mt-2 mb-2">@finalPriceWord</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row  mt-5">
+                    <div class="col-1 ">
+                    </div>
+                    <div class="col-4 border-top marginTop ">
+                        <h4 class="mt-3">Podpis osoby upowaznionej do wystawienia</h4>
+                    </div>
+                    <div class="col-2 ">
+                    </div>
+                    <div class="col-4 border-top marginTop ">
+                        <h4 class="mt-3">Podpis osoby upowaznionej do wystawienia</h4>
+                    </div>
+                    <div class="col-1 ">
+                    </div>
+                </div>
+            </div>
+
+        </page>
+    </MudContainer>
+    @*    <div class="d-flex justify-content-around flex-wrap mt-5">
+    <MudButton Variant="Variant.Filled" StartIcon="@Icons.Filled.ArrowBackIos" Color="Color.Info" Size="Size.Small" OnClick="Back">Wroc</MudButton>
+    <MudButton Variant="Variant.Filled" StartIcon="@Icons.Filled.ArrowCircleLeft" Color="Color.Info" Size="Size.Small" OnClick="Edit">Wroc do edycji</MudButton>
+    <MudButton Variant="Variant.Filled" StartIcon="@Icons.Filled.Print" Color="Color.Success" Size="Size.Small"><a onclick="generatePDF()">Drukuj</a> </MudButton>
+    </div>*@
+
+</MudPaper>
+@*<button class="btn btn-primary" onclick="generatePDF()">Generate PDF</button>*@
+
+@*</div>*@
+@code {
+    private List<BreadcrumbItem> _items = new List<BreadcrumbItem>
+    {
+     new BreadcrumbItem("Home", href: "/", icon: Icons.Material.Filled.Home),
+        new BreadcrumbItem("Faktury", href: "/table"),
+        new BreadcrumbItem("Szczegoly", href: null, disabled: true),
+    };
+    [Parameter]
+    public string id { get; set; }
+
+    private List<Product> products = new List<Product>();
+
+    private Invoice invoice = new Invoice();
+    private string finalPriceWord = "";
+    private void con()
+    {
+        var options = new NumberToTextOptions
+            {
+                Stems = true,
+                Currency = Currency.PLN,
+            };
+
+
+    }
+    protected async void generatePDF(MouseEventArgs args)
+    {
+        await jsRuntime.InvokeAsync<string>("generatePDF");
+    }
+
+    private double finalNettoPrice()
+    {
+        double sum = 0;
+        foreach (var prop in products)
+        {
+            sum += prop.nettoPrice;
+        }
+        return Math.Round(sum, 2);
+    }
+    private double finalVatPrice()
+    {
+        double sum = 0;
+        foreach (var prop in products)
+        {
+            sum += prop.bruttoPrice - prop.nettoPrice;
+        }
+        return Math.Round(sum, 2);
+    }
+    private double finalPrice()
+    {
+        string priceWord = "";
+        double sum = 0;
+        foreach (var prop in products)
+        {
+            sum += prop.bruttoPrice;
+        }
+
+        priceWord = Math.Round(sum, 2).ToString();
+        int found = priceWord.IndexOf(",");
+
+        finalPriceWord = ((int)Math.Round(sum, 2)).ToWords() + " i 0," + priceWord.Substring(found + 1) + " PLN";
+
+        return Math.Round(sum, 2);
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        invoice = await Http.GetFromJsonAsync<Invoice>($"https://localhost:7116/api/Invoice/{id}");
+        products = invoice.products;
+    }
+    private async Task Back()
+    {
+        NavManager.NavigateTo($"/table");
+    }
+    //private async Task Delete()
+    //{
+    //    await Http.DeleteAsync($"https://localhost:7116/api/Buyer/{id}");
+    //    NavManager.NavigateTo($"/table");
+    //}
+    private async Task Edit()
+    {
+        NavManager.NavigateTo($"/invoice-data/{id}");
+    }
+    private async Task InvoiceDetails(Invoice i)
+    {
+        NavManager.NavigateTo($"/invoice-data/{i.id}");
+    }
+
+    public static string NumberToText(int n)
+    {
+        if (n < 0)
+            return "Minus " + NumberToText(-n);
+        else if (n == 0)
+            return "";
+        else if (n <= 19)
+            return new string[] {"One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight",
+         "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen",
+         "Seventeen", "Eighteen", "Nineteen"}[n - 1] + " ";
+        else if (n <= 99)
+            return new string[] {"Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy",
+         "Eighty", "Ninety"}[n / 10 - 2] + " " + NumberToText(n % 10);
+        else if (n <= 199)
+            return "One Hundred " + NumberToText(n % 100);
+        else if (n <= 999)
+            return NumberToText(n / 100) + "Hundreds " + NumberToText(n % 100);
+        else if (n <= 1999)
+            return "One Thousand " + NumberToText(n % 1000);
+        else if (n <= 999999)
+            return NumberToText(n / 1000) + "Thousands " + NumberToText(n % 1000);
+        else if (n <= 1999999)
+            return "One Million " + NumberToText(n % 1000000);
+        else if (n <= 999999999)
+            return NumberToText(n / 1000000) + "Millions " + NumberToText(n % 1000000);
+        else if (n <= 1999999999)
+            return "One Billion " + NumberToText(n % 1000000000);
+        else
+            return NumberToText(n / 1000000000) + "Billions " + NumberToText(n % 1000000000);
+    }
+
+}

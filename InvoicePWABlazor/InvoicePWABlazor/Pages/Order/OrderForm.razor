@@ -1,0 +1,191 @@
+﻿@page "/order/{Id}"
+@page "/order/add"
+@inject HttpClient Http
+@inject NavigationManager NavManager
+@attribute [Authorize]
+
+<h2 class="border-bottom m-2 border-dark">
+    Zlecenie
+    <small class="text-muted">dodaj/edytuj zlecenie</small>
+</h2>
+<MudPaper Class="d-flex bg-light mb-3">
+    <MudBreadcrumbs Items="_items"></MudBreadcrumbs>
+    <MudSpacer />
+</MudPaper>
+<MudPaper Class="p-md-5 pt-3 pb-3">
+    <EditForm Model="@o" OnValidSubmit="OnValidSubmit">
+        <DataAnnotationsValidator />
+        <MudCardContent>
+
+            @if (Id == null)
+            {
+                <MudSelect T="string" ValueChanged="value => FillContractor(value)" Label="Kontrahent" AnchorOrigin="Origin.BottomCenter">
+                    @foreach (var b in buyers)
+                    {
+                        <MudSelectItem Value="@b.Name" />
+                    }
+                </MudSelect>
+                <MudTextField Label="Wybierz kontrahenta z listy"
+                          @bind-Value="o.Buyer" Required Disabled For="@(() => o.Buyer)" />
+            }
+            else
+            {
+                <MudTextField Label="Kontrahent"
+                          @bind-Value="o.Buyer" Required Disabled For="@(() => o.Buyer)" />
+            }
+
+            <MudTextField Label="Numer zamowienia" Class="mt-3" Required HelperText="#/Zam/02/11"
+                          @bind-Value="o.OrderNumber" For="@(() => o.OrderNumber)" />
+            <MudDatePicker For="@(() => Date)" Required Label="Data wykonania" />
+            <MudTextField Label="Status"
+                          @bind-Value="o.State" Required For="@(() => o.State)" />
+
+
+            <MudSelect T="string" ValueChanged="value => FillItem(value)" Label="Nazwa produktu" AnchorOrigin="Origin.BottomCenter">
+                @foreach (var item in items)
+                {
+                    <MudSelectItem Value="@item.Name" />
+                }
+            </MudSelect>
+
+
+            <EditForm Model="@p" OnValidSubmit="addPtoduct" Context="product">
+                <DataAnnotationsValidator />
+                <div class="d-flex flex-wrap">
+                    <MudTextField Label="Nazwa"
+                                  @bind-Value="p.name" Disabled Required For="@(() => p.name)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    <MudTextField Label="Ilosc"
+                                  @bind-Value="p.quantity" Required For="@(() => p.quantity)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    <MudTextField Label="Jednostka"
+                                  @bind-Value="p.unit" Required For="@(() => p.unit)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    <MudCardActions>
+                        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" Color="Color.Info" Size="Size.Small" Class="ml-auto">dodaj</MudButton>
+                    </MudCardActions>
+                </div>
+            </EditForm>
+            <MudPaper Class=" bg-light  mt-2">
+                <MudText Typo="Typo.h5" Class="mb-4">Produkty</MudText>
+                <MudSpacer />
+            </MudPaper>
+            @foreach (var p in o.Products)
+            {
+                <div class="d-flex flex-wrap mt-1">
+                    <MudTextField Label="Nazwa"
+                              @bind-Value="p.name" Disabled For="@(() => p.name)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    <MudTextField Label="Ilosc"
+                              @bind-Value="p.quantity" Disabled For="@(() => p.quantity)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    <MudTextField Label="Jednostka"
+                              @bind-Value="p.unit" Disabled For="@(() => p.unit)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    <MudButton ButtonType="ButtonType.Button" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="()=>Delete(p)" Class="ml-auto">Usun</MudButton>
+                </div>
+
+            }
+            <MudCardActions>
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save" Color="Color.Info" Size="Size.Small" Class="ml-auto">Zapisz</MudButton>
+            </MudCardActions>
+        </MudCardContent>
+
+    </EditForm>
+</MudPaper>
+
+@*}*@
+
+@code {
+    private List<BreadcrumbItem> _items = new List<BreadcrumbItem>
+    {
+     new BreadcrumbItem("Home", href: "/", icon: Icons.Material.Filled.Home),
+        new BreadcrumbItem("Zlecenia",  href: "order"),
+        new BreadcrumbItem("Dodaj/edytuj",  href: null, disabled: true)
+
+    };
+    [Parameter]
+    public string Id { get; set; }
+
+    private Order o = new Order();
+    private OrderDto oDto = new OrderDto();
+    List<Buyer> buyers = new();
+    Buyer b;
+    Product p = new Product();
+    public DateTime? Date { get; set; } = DateTime.Now;
+    List<Item> items = new();
+    bool success;
+    private Item itemValue { get; set; }
+    Buyer buyer = new Buyer();
+
+    protected override async Task OnInitializedAsync()
+    {
+        buyers = await Http.GetFromJsonAsync<List<Buyer>>($"https://localhost:7116/api/Buyer");
+        items = await Http.GetFromJsonAsync<List<Item>>($"https://localhost:7116/api/Item");
+
+        if (Id != null)
+        {
+            o = await Http.GetFromJsonAsync<Order>($"https://localhost:7116/api/Order/{Id}");
+        }
+    }
+
+    private async void OnValidSubmit(EditContext context)
+    {
+        success = true;
+        StateHasChanged();
+        if (Id == null)
+        {
+            oDto.Buyer = o.Buyer;
+            oDto.OrderNumber = o.OrderNumber;
+            oDto.State = o.State;
+            oDto.DateOfIssue = o.DateOfIssue;
+            oDto.DateOfExecution = (DateTime)Date;
+            oDto.Products = o.Products;
+
+
+            //await Http.PostAsJsonAsync("https://localhost:7116/api/Order", oDto);
+            //NavManager.NavigateTo($"/order");
+            AddOrder();
+        }
+        else
+        {
+            await Http.PutAsJsonAsync("https://localhost:7116/api/Order", o);
+            NavManager.NavigateTo($"/order");
+            //AddOrder();
+        }
+    }
+    private async Task AddOrder()
+    {
+        buyer = buyers.FirstOrDefault(n => n.Name == b.Name);
+        if (buyer != null)
+        {
+            buyer.Orders = new List<Order> { o };
+            await Http.PutAsJsonAsync("https://localhost:7116/api/Buyer", buyer);
+            NavManager.NavigateTo($"/order");
+        }
+    }
+    private async Task FillContractor(string e)
+    {
+        b = buyers.FirstOrDefault(i => i.Name == e);
+
+        o.Buyer = b.Name + "\nNIP: " + b.NIP + "\n" + b.Adres + "\n" + b.PostCode;
+    }
+
+    private async Task FillItem(string e)
+    {
+        Item i = items.FirstOrDefault(i => i.Name == e);
+        Console.WriteLine(i.Name);
+        p.name = i.Name;
+        p.quantity = i.Quantity;
+        p.unit = i.Unit;
+        p.price = i.Price;
+        p.vat = i.Vat;
+        p.nettoPrice = i.NettoPrice;
+        p.bruttoPrice = i.BruttoPrice;
+
+
+    }
+    private void addPtoduct()
+    {
+        o.Products.Add(p);
+        p = new Product();
+    }
+    private async Task Delete(Product p)
+    {
+        o.Products.Remove(p);
+    }
+}

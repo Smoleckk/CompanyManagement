@@ -1,0 +1,78 @@
+﻿@page "/"
+@inject HttpClient Http
+@inject NavigationManager NavManager
+@attribute [Authorize]
+
+
+<h2 class="border-bottom m-2 border-dark">
+    Home
+    <small class="text-muted">witamy w systemie</small>
+</h2>
+<MudPaper Class="d-flex bg-light">
+    <MudBreadcrumbs Items="_items"></MudBreadcrumbs>
+    <MudSpacer />
+</MudPaper>
+<MudContainer Class="d-flex m-2 flex-wrap align-items-center justify-content-start ">
+    <MudCard Class=" m-2 " Style="width:400px">
+        <MudCardContent>
+            <MudText Typo="Typo.h5"><b style="font-size:32px">F</b>aktura sprzedażowa</MudText>
+            <MudText Typo="Typo.body2">Wszystkie wystawione faktury w systemie</MudText>
+        </MudCardContent>
+        <MudCardActions>
+            <MudButton Variant="Variant.Text" Color="Color.Dark" Href="/table">Wyswietl faktury</MudButton>
+        </MudCardActions>
+    </MudCard>
+    <MudCard Class=" m-2 " Style="width:400px">
+        <MudCardContent>
+            <MudText Typo="Typo.h5"><b style="font-size:32px">Z</b>lecenia</MudText>
+            <MudText Typo="Typo.body2">Wszystkie wystawione zlecenia w systemie</MudText>
+        </MudCardContent>
+        <MudCardActions>
+            <MudButton Variant="Variant.Text" Color="Color.Dark" Href="/order">Wyswietl zlecenia</MudButton>
+        </MudCardActions>
+    </MudCard>
+    <MudCard Class=" m-2 " Style="width:250px">
+        <MudCardContent>
+            <MudText Typo="Typo.h5"><b style="font-size:32px">K</b>ontrahenci</MudText>
+            <MudText Typo="Typo.body2">Wszyscy kontrahenci w systemie</MudText>
+        </MudCardContent>
+        <MudCardActions>
+            <MudButton Variant="Variant.Text" Color="Color.Dark" Href="/contractor">Wyswietl kontrahentów</MudButton>
+        </MudCardActions>
+    </MudCard>
+    <MudCard Class=" m-2 " Style="width:250px">
+        <MudCardContent>
+            <MudText Typo="Typo.h5"><b style="font-size:32px">P</b>rodukty</MudText>
+            <MudText Typo="Typo.body2">Wszystkie produkty w systemie</MudText>
+        </MudCardContent>
+        <MudCardActions>
+            <MudButton Variant="Variant.Text" Color="Color.Dark" Href="/item">Wyswietl produkty</MudButton>
+        </MudCardActions>
+    </MudCard>
+    <MudCard Class=" m-2 " Style="width:250px">
+        <MudCardContent>
+            <MudText Typo="Typo.h5"><b style="font-size:32px">N</b>otatki</MudText>
+            <MudText Typo="Typo.body2">Twoje notatki</MudText>
+        </MudCardContent>
+        <MudCardActions>
+            <MudButton Variant="Variant.Text" Color="Color.Dark" Href="/note">Wyswietl notatki</MudButton>
+        </MudCardActions>
+    </MudCard>
+    <MudCard Class=" m-2 " Style="width:250px">
+        <MudCardContent>
+            <MudText Typo="Typo.h5"><b style="font-size:32px">K</b>alendarz </MudText>
+            <MudText Typo="Typo.body2">Zadan i spotkan</MudText>
+        </MudCardContent>
+        <MudCardActions>
+            <MudButton Variant="Variant.Text" Color="Color.Dark" Href="/scheduler">Wyswietl kalendarz</MudButton>
+        </MudCardActions>
+    </MudCard>
+</MudContainer>
+
+
+@code {
+    private List<BreadcrumbItem> _items = new List<BreadcrumbItem>
+    {
+     new BreadcrumbItem("Home", href: "/", icon: Icons.Material.Filled.Home, disabled:true),
+    };
+}

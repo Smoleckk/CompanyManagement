@@ -1,0 +1,148 @@
+﻿/*@media print {
+    body {
+        -webkit-print-color-adjust: exact;
+    }
+}
+
+h4 {
+    font-size: 14px;
+}
+
+table th, table td {
+    text-align: center;
+}
+
+.width {
+    width: 75%;
+}
+
+.column-width {
+    width: 75%;
+}
+
+button {
+    width: 200px;
+}
+
+.responsive-table {
+    width: 60%;
+}
+
+.ww-50 {
+    width: 50%;
+}
+
+.ww-90 {
+    width: 90%;
+}
+
+.hiddenOrDisplaySmall {
+    display: none;
+}
+
+.hiddenOrDisplayBig {
+    display: flex;
+}
+
+.hide-page {
+    display: none;
+}
+
+@media screen and (max-width: 1600px) {
+    .width {
+        width: 90%;
+    }
+
+    .column {
+        flex-direction: column;
+    }
+
+
+    .responsive-table {
+        width: 90%;
+    }
+
+    .ww-50 {
+        width: 50%;
+    }
+
+    .column-width {
+        width: 100%;
+    }
+
+    .hiddenOrDisplaySmall {
+        display: none;
+    }
+
+    .hiddenOrDisplayBig {
+        display: flex;
+    }
+}
+
+@media screen and (max-width: 900px) {
+    .width {
+        width: 95%;
+    }
+
+    .column {
+        flex-direction: row;
+    }
+
+    .column-all {
+        flex-direction: column;
+    }
+
+    .ww-50 {
+        width: 100%;
+    }
+
+    .column-width {
+        width: 100%;
+    }
+
+    .responsive-table {
+        width: 95%;
+    }
+
+    .hiddenOrDisplaySmall {
+        display: flex;
+    }
+
+    .hiddenOrDisplayBig {
+        display: none;
+    }
+}
+
+.color-print {
+    background-color: lightgray !important;
+}
+
+.marginTop {
+    margin-top: 200px;
+}*/
+
+/*a4 page*/
+/*body {
+    background: white;
+}
+
+page {
+    background: white;
+}*/
+/*body {
+    background: rgb(204,204,204);
+}
+
+page {
+    background: white;
+    display: block;
+    margin: 0 auto;
+    margin-bottom: 0.5cm;
+    box-shadow: 0 0 0.5cm rgba(0,0,0,0.5);
+}
+
+    page[size="A4"] {
+        width: 21cm;
+        height: 29.7cm;
+    }
+*/

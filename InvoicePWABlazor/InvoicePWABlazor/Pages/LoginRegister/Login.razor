@@ -1,0 +1,87 @@
+﻿@page "/login"
+@using InvoicePWABlazor.Dtos
+@inject HttpClient Http
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ILocalStorageService LocalStorage
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+@*<EditForm Model="user" OnSubmit="HandleLogin">
+    <label for="username">Name</label>
+    <InputText id="username" @bind-Value="user.Username" />
+    <label for="password">Password</label>
+    <InputText id="password" @bind-Value="user.Password" type="password" />
+    <button type="submit" class="btn btn-primary">Do it!</button>
+</EditForm>*@
+
+<div class="sufee-login d-flex align-content-center flex-wrap ">
+    <div class="container ">
+        <div class="login-content  shadow p-lg-5 pt-5  bg-white rounded">
+            <div class="login-logo">
+                @*   <a href="/">
+                <img class="align-content" src="images/logo.png" alt="">
+                </a>*@
+                <h1>Nice to meet you!</h1>
+            </div>
+            <div class="login-form " style="">
+                <form onsubmit="@HandleLogin">
+                    <div class="form-group">
+                        <label>Login</label>
+                        <input type="text" @bind="user.Username" required class="form-control" placeholder="Login">
+                    </div>
+                    <div class="form-group">
+                        <label>Haslo</label>
+                        <input type="password" @bind="user.Password" required class="form-control" placeholder="Haslo">
+                    </div>
+                    @*                    @alert
+                    @if (@alert)
+                    {
+                    <MudAlert Severity="Severity.Error">Meltdown is imminent</MudAlert>
+                    }*@
+                    <button type="submit" class="btn btn-primary ">Zaloguj sie</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    UserLoginDto user = new UserLoginDto();
+    bool alert = false;
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity.Name != null)
+        {
+            NavigationManager.NavigateTo($"/");
+
+        }
+    }
+
+    async Task HandleLogin()
+    {
+        var result = await Http.PostAsJsonAsync("https://localhost:7116/api/Auth/login", user);
+        var token = "";
+        if (result != null)
+            token = await result.Content.ReadAsStringAsync();
+        //Console.WriteLine("token " + token);
+        if (token != "Wrong Credentials")
+        {
+            //Console.WriteLine("Correct Credentials");
+
+            await LocalStorage.SetItemAsync("token", token);
+            await AuthStateProvider.GetAuthenticationStateAsync();
+            NavigationManager.NavigateTo("table");
+        }
+        if (token == "Wrong Credentials")
+        {
+            //Console.WriteLine("Wrong Credentials");
+
+            await LocalStorage.RemoveItemAsync("token");
+            await AuthStateProvider.GetAuthenticationStateAsync();
+        }
+    }
+
+}

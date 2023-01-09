@@ -1,0 +1,104 @@
+﻿@page "/order-page/{Id}"
+@inject HttpClient Http
+@inject IJSRuntime jsRuntime
+@inject NavigationManager NavManager
+@attribute [Authorize]
+
+<h2 class="border-bottom m-2 border-dark">
+    Zlecenie
+    <small class="text-muted">szczegóły zlecenia</small>
+</h2>
+<MudPaper Class="d-flex bg-light">
+    <MudBreadcrumbs Items="_items"></MudBreadcrumbs>
+    <MudSpacer />
+    <MudIconButton Icon="@Icons.Filled.DesignServices" Color="Color.Dark" OnClick="GenerateInvoice"></MudIconButton>
+    <MudIconButton Icon="@Icons.Filled.Edit" Color="Color.Dark" OnClick="Edit"></MudIconButton>
+    <MudIconButton Icon="@Icons.Filled.Print" Color="Color.Dark" OnClick="generatePDF"></MudIconButton>
+
+
+</MudPaper>
+<MudPaper MinHeight="50vh" Class="mx-auto" Height="100%">
+    @*MinWidth="500px" MaxWidth="900px"*@
+    <MudContainer>
+        <page id="orderPage">
+            <div class="container ">
+                <div class="row mt-5">
+                    <div class="col mt-5">
+                        <h4 class="border-top w-75 d-flex flex-column align-items-center rounded mt-2 color-print">Nabywca</h4>
+                        <h4 class="ww-90 align-items-start mt-2" style="white-space: pre-wrap;">@order.Buyer</h4>
+                    </div>
+                    <div class="col d-flex flex-column align-items-center justify-content-around align-items-center  mt-5 ">
+                        <h4 class="border-top w-75 d-flex flex-column align-items-center rounded mt-2 color-print">Data wystawienia</h4>
+                        <h4 class="m-1"><b>@order.DateOfIssue.ToString("dd'/'MM'/'yyyy");</b></h4>
+                        <h4 class="border-top w-75 d-flex flex-column align-items-center rounded mt-2 color-print">Data wykonania uslugi</h4>
+                        <h4 class="m-1"><b>@order.DateOfExecution.ToString("dd'/'MM'/'yyyy");</b></h4>
+
+                    </div>
+                </div>
+                <div class="row mt-5 mb-3">
+                    <div class="col d-flex flex-column align-items-center  ">
+                        <h3><b>Zlecenie nr: @order.OrderNumber</b></h3>
+                    </div>
+                </div>
+                <table class="table-bordered ">
+                    <thead class="color-print">
+                        <tr class="">
+                            <th style="width:2%"><h4 class="">Lp.</h4></th>
+                            <th style="width:15%"><h4>Nazwa towaru lub uslugi</h4></th>
+                            <th style="width:3%"><h4>Ilosc</h4></th>
+                            <th style="width:3%"><h4>Jed.</h4></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (order.Products != null)
+                        {
+                            @for (var i = 0; i < order.Products.Count; i++)
+                            {
+                                <tr>
+                                    <td><h4>@i</h4></td>
+                                    <td><h4>@order.Products[i].name</h4></td>
+                                    <td><h4>@order.Products[i].quantity</h4></td>
+                                    <td><h4>@order.Products[i].unit</h4></td>
+
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </page>
+    </MudContainer>
+</MudPaper>
+
+@code {
+    private List<BreadcrumbItem> _items = new List<BreadcrumbItem>
+    {
+     new BreadcrumbItem("Home", href: "/", icon: Icons.Material.Filled.Home),
+        new BreadcrumbItem("Zlecenia",  href: "/order"),
+        new BreadcrumbItem("Szczegóły",  href: null, disabled: true)
+    };
+
+    [Parameter]
+    public string Id { get; set; }
+
+    private Order order = new Order();
+
+    protected override async Task OnInitializedAsync()
+    {
+        order = await Http.GetFromJsonAsync<Order>($"https://localhost:7116/api/Order/{Id}");
+
+    }
+    private async Task GenerateInvoice()
+    {
+        NavManager.NavigateTo($"/invoice-order-data/{order.OrderId}");
+    }
+
+    private async Task Edit()
+    {
+        NavManager.NavigateTo($"/order/{Id}");
+    }
+    protected async void generatePDF(MouseEventArgs args)
+    {
+        await jsRuntime.InvokeAsync<string>("generateOrderPDF");
+    }
+}
