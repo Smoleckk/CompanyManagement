@@ -20,6 +20,7 @@ Stos technologiczny, na którym oparta jest aplikacja, składa się z następuj�
 * .NET 6 jako platforma do tworzenia API
 * Blazor jako framework do tworzenia interfejsu użytkownika
 * MS SQL jako baza danych
+
 Dzięki temu stosowi technologicznemu, aplikacja jest wydajna, niezawodna i łatwa w utrzymaniu.
 
 ## Przegląd aplikacji
