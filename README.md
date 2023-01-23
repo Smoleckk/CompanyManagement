@@ -9,8 +9,8 @@ co pozwoli Ci na szybsze i łatwiejsze zarządzanie swoim biznesem.
 Po zalogowaniu się do systemu, dostępne są 4 główne moduły:
 * Generowanie faktur: Aplikacja umożliwia łatwe i szybkie generowanie faktur dla klientów. Dzięki temu mamy pewność, że faktury są poprawnie wystawione i gotowe do wysłania.
 * Zarządzanie magazynem: Aplikacja pozwala na śledzenie stanu magazynu. Dzięki temu mamy pełną kontrolę nad swoimi zapasami i możemy szybko reagować na zmiany.
-* zarządzanie kontrahentami: Aplikacja umożliwia zarządzanie bazą kontrahentów. Dzięki temu mamy wszystkie informacje o swoich klientach i dostawcach w jednym miejscu.
-* zarządzanie zleceniami Aplikacja umożliwia łatwe i szybkie generowanie zleceń dla klientów, na podstawie których użytkownik może wystawić fakturę.
+* Zarządzanie kontrahentami: Aplikacja umożliwia zarządzanie bazą kontrahentów. Dzięki temu mamy wszystkie informacje o swoich klientach i dostawcach w jednym miejscu.
+* Zarządzanie zleceniami: Aplikacja umożliwia łatwe i szybkie generowanie zleceń dla klientów, na podstawie których użytkownik może wystawić fakturę.
 
 ## Technologie
 Aplikacja jest progresywna, że może być zainstalowana na różnych urządzeniach, takich jak komputery, tablety czy smartfony.
